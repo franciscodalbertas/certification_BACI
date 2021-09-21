@@ -1,0 +1,23 @@
+---
+title: "Análise preliminar"
+author: "Francisco d'Albertas & Patricia Ruggiero"
+date: "21/09/2021"
+output: 
+  html_document:
+    toc: true
+    theme: united
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = F,warning = F)
+```
+
+## Objetivos
+
+Depois de ter excecutado matching, analisar a efetividade da certificação usando análise de regressão em painel.
+
+Vamos analisar os dados com a área das propriedades em log e na escala original (variáveis usadas para realizar o matching)
+
+## Desmatamento
+
+
