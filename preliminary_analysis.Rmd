@@ -10,14 +10,253 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = F,warning = F)
+
+
+load("D:/Doutorado/cap3/certification_BACI/preliminary_analysis.RData")
+
+### pra nao rodar modelos novamente
+# rmarkdown::render(input = "preliminary_analysis.Rmd",output_file = "preliminary_analysis.html",envir = parent.frame())
+
 ```
 
 ## Objetivos
 
 Depois de ter excecutado matching, analisar a efetividade da certificação usando análise de regressão em painel.
 
-Vamos analisar os dados com a área das propriedades em log e na escala original (variáveis usadas para realizar o matching)
+Analisamos os dados com a área das propriedades em log e na escala original (variáveis usadas para realizar o matching).
+
+Os modelos foram construídos através de modelos bayesianos; usei como referência os scripts do artigo
+
+GLMM BACI environmental impact analysis shows coastal dune restoration reduces seed predation on an endangered plant, de Pardini et al., 2018. 
+
+O trabalho esclarece bem como usar a estrutura que conhecemos para analisar dados em painel.
+
+## Acessando os dados das propriedades pareadas (área em escala original)
+
+```{r}
+
+# p <- 'D:\\Doutorado\\cap3\\matching'
+# 
+# cont <- read.csv(file.path(p,'control.csv'))
+# 
+# treat <- read.csv(file.path(p,'treatment.csv'))
+# 
+
+data <- rbind(cont,treat)
+
+head(data)
+
+
+```
+
 
 ## Desmatamento
 
+Calculei a taxa de desmatamento como a área desmatada em um dado ano dividida pela área de floresta no respectivo ano. Usar a área do ano anterior gera uma série de erros (**discutir isso**)
 
+
+Abrindo planilha de dados de desmatamento:
+
+```{r}
+
+# p2 <- "D:\\Doutorado\\cap3\\metricas"
+# 
+# 
+# desm_cert <- read.csv(file.path(p2,"taxa_desmatamento_area_veg_cert.csv"))
+# 
+# desm_ncert <- read.csv(file.path(p2,"taxa_desmatamento_area_veg_ncert.csv"))
+# 
+# 
+# # subset
+# 
+# desm_cert <- desm_cert[desm_cert$COD_IMOVEL %in% data$COD_IMOVEL,]
+# 
+# desm_ncert <- desm_ncert[desm_ncert$COD_IMO %in% data$COD_IMOVEL,]
+# 
+# # incluindo tratamento
+# 
+# desm_cert$treatment <- 'certified'
+# desm_ncert$treatment <- 'n_certified'
+# 
+# # dados de interesse
+# 
+# desm_cert <- desm_cert[,c(2,13,18,19)]
+# desm_ncert <- desm_ncert[,c(2,18,23,24)]
+# 
+# names(desm_ncert) <- names(desm_cert)
+# 
+# desm <- rbind(desm_ncert,desm_cert)
+# 
+# # excluindo 1996
+# 
+# desm <- desm[desm$year!=1996,]
+# 
+# 
+# 
+# # codigo imovel como fator
+# 
+# desm$COD_IMOVEL <- as.factor(desm$COD_IMOVEL)
+# 
+# ```
+# 
+# Criando '*dummy*' para antes e depois da certificação:
+# 
+# ```{r}
+# 
+# desm$certification <- NA
+# 
+# desm$certification[desm$year<=2007] <- "before"
+# desm$certification[desm$year>2007] <- "after"
+# 
+# # ano tem que ser fatorial
+# 
+# desm$year <- as.factor(desm$year)
+# 
+# ```
+# 
+# 
+# ### Modelo usando variaveis pareadas com área em escala original
+# 
+# Estou explorando usar modelos bayesianos. Usar cadeias de markov demora muito, logo para análise exploratória, estou usando um pacote que usa aproximação de laplace. Esse pacote não tem uma familia com zero e um inflated beta. Tenho que fazer uma transformação na variável resposta para não ter valores 0 e 1.
+# 
+# 
+# ```{r}
+# y.transf.betareg <- function(y){
+#     n.obs <- sum(!is.na(y))
+#     (y * (n.obs - 1) + 0.5) / n.obs
+# }
+# 
+# 
+# desm$y <- y.transf.betareg(desm$def_rate)
+```
+
+
+Modelando os dados:
+
+```{r}
+
+
+
+
+library(INLA)
+
+# documentação da função
+#names(inla.models()$likelihood)
+#inla.doc("familyname")
+
+# deu certo!
+
+# m01 <- inla(y~certification*treatment+f(COD_IMOVEL,model = "iid")+f(year,model = "iid"),
+#   family = "beta",
+#   data = desm,
+#   control.predictor = list(link = 1),
+#   verbose=TRUE
+# )
+# 
+# 
+# fit <- m01$summary.fitted.values
+# desm$mean.m01 <- fit$mean
+# desm$lo.m01 <- fit$`0.025quant`
+# desm$up.m01<- fit$`0.975quant`
+# 
+
+
+
+```
+
+
+Plotando resultado:
+
+```{r echo=FALSE}
+
+library(doBy)
+
+averages <- summaryBy(data = desm,mean.m01~treatment+year) 
+
+
+library(ggplot2)
+
+# pensar em como plotar essas caralhas! ta calculando varios, tem q pegar efeito
+# medio! tem q calcular media dos sites!! e ai ic tb!!
+
+def_year <- ggplot(data = desm, aes(x = year, y = y))+
+  #geom_point(aes(colour=treatment),alpha = 0.2)+
+  geom_line(data=averages,aes(x = year, y = mean.m01.mean,group=treatment,colour=treatment))+
+  #geom_ribbon(aes(x = year, ymin = lo.m01, ymax = up.m01), alpha = 1)+
+  #facet_wrap(~COD_IMOVEL, scales = "free") +
+  xlab("Year")+
+  ylab("deforestation rate")+
+  theme_bw()+
+  ylim(0,0.05)+
+  scale_x_discrete(labels=c(seq(97,99,1),seq(01,18,1)))+
+  geom_vline(xintercept = 10,linetype = "dashed",colour="red",size=1)
+
+# isso uso pra plotar tamanho do efeito!
+
+fit_fixed <- data.frame(m01$summary.fixed )
+
+fit_fixed$coef <- row.names(fit_fixed)
+
+l.fim <- c("time","treatment:time","treatment")
+
+# my.theme = theme_bw(base_size = 12)+theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank()) + 
+#   theme(axis.title.x = element_text( face="bold"))
+
+
+es.plot <- ggplot(data = fit_fixed[-1,],aes(x=coef,y = mean))+
+    #geom_point(colour = "black", size = 10) +
+    geom_pointrange(aes(ymin=X0.025quant,ymax=X0.975quant),size=0.1,color="black") + 
+    coord_flip()+
+    scale_x_discrete("",labels=l.fim)+
+    scale_y_continuous("Standardized coeficients")+
+    geom_hline(yintercept = 0, linetype="dotted",color = "black", size=0.5) +
+    #ggtitle("Model ajusted with Yield max (R²=0.46)")+
+    #my.theme+
+    theme(legend.position = "none")+
+    #### mudando facet_Grid label
+    theme(
+      strip.background =  element_blank(),strip.text.x = element_text(
+        size = 12, color = "black", face = "bold"
+      )
+    )
+
+
+# e pra plotar antes e depois grafico com ic + media?
+
+# teria q calcular media por tratamento e fase (antes e depois)
+# IC valeria
+
+
+BACI <- summaryBy(data = desm,mean.m01~treatment+certification,FUN = c(mean,sd))
+
+BACI$se <- BACI$mean.m01.sd/sqrt(length(desm))
+
+BACI$ymin <- BACI$mean.m01.mean-BACI$se
+
+BACI$ymax <- BACI$mean.m01.mean+BACI$se
+
+def_BACI <- ggplot(desm, aes(x=certification, y=mean.m01, group=treatment, color=treatment)) + 
+  geom_line(width=0.2,position=position_dodge(0.05))+
+  geom_point(data = BACI,aes(x = certification,y=mean.m01.mean, group=treatment, color=treatment)
+             ,position=position_dodge(0.05))+
+  geom_linerange(data = desm,aes(ymin=lo.m01, ymax=up.m01), width=0.2,position=position_dodge(0.05))+
+  ylim(0,0.025)
+
+
+es.plot
+
+
+```
+
+
+```{r}
+
+library(ggpubr)  
+
+
+
+ggarrange(def_year,def_BACI)
+
+```
+
+**Pensar em como fazer da forma "tradicional"**
