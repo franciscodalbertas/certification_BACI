@@ -1,0 +1,617 @@
+---
+title: "Before After Control Impact on agricultural certification"
+author: "Francisco d'Albertas"
+date: "23/09/2021"
+output: 
+        html_document:
+                toc: true
+                theme: united
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = F,warning = F)
+
+#===============================================================================
+
+# pacotes
+
+#===============================================================================
+
+library(doBy)
+library(plm)
+library(ggplot2)
+library(clubSandwich)
+library(reshape2)
+
+
+```
+
+## Objetivos
+
+Depois de ter excecutado matching, analisar a efetividade da certificação usando análise de regressão em painel.
+
+A idéia é Analisar os dados com a área das propriedades em log e na escala original (variáveis usadas para realizar o matching). **discutir**
+
+## Pontos para disctutir
+
+Completar
+
+
+
+```{r include=FALSE}
+
+# diretorio de trabalho
+
+wd <- getwd()
+
+# pasta mae
+
+diretorio <- dirname(getwd())
+
+# caminhos dos arquivos
+
+p <- (file.path(diretorio,'matching'))
+p2 <- file.path(diretorio,'metricas')
+
+# arquivos com as propriedades pareadas
+
+cont <- read.csv(file.path(p,'control.csv'))
+
+treat <- read.csv(file.path(p,'treatment.csv'))
+
+data <- rbind(cont,treat)
+
+#write.csv(data,"matched_properties.csv",row.names = F)
+
+```
+
+
+## Desmatamento(matching sem log)
+
+Calculei o desmatamento usando a área desmatada sobre a área total de vegetação nativa para o mesmo ano (**ponto pra discutir**).
+
+```{r include=FALSE}
+
+#===============================================================================
+
+## codigo pra gerar a planilha de desmatamento
+
+#===============================================================================
+
+
+# rodando, crio a planilha de desmatamento. 
+
+# como ela ta salva, posso carregar ela pra ser mais rápido.
+
+
+
+# Abrindo planilha de dados de desmatamento:
+
+# desm_cert <- read.csv(file.path(p2,"taxa_desmatamento_area_veg_cert.csv"))
+#  
+# desm_ncert <- read.csv(file.path(p2,"taxa_desmatamento_area_veg_ncert.csv"))
+# 
+# # subset
+#  
+# desm_cert <- desm_cert[desm_cert$COD_IMOVEL %in% data$COD_IMOVEL,]
+#  
+# desm_ncert <- desm_ncert[desm_ncert$COD_IMO %in% data$COD_IMOVEL,]
+# 
+# # incluindo tratamento
+#  
+# desm_cert$treatment <- 'certified'
+# desm_ncert$treatment <- 'n_certified'
+# 
+# # dados de interesse
+# 
+# desm_cert <- desm_cert[,c(2,13,18,19)]
+# desm_ncert <- desm_ncert[,c(2,18,23,24)]
+#  
+# names(desm_ncert) <- names(desm_cert)
+#  
+# desm <- rbind(desm_ncert,desm_cert)
+# 
+# # excluindo 1996
+#  
+# desm <- desm[desm$year!=1996,]
+# 
+# # codigo imovel como fator
+# 
+# desm$COD_IMOVEL <- as.factor(desm$COD_IMOVEL)
+#  
+# # Criando '*dummy*' para antes e depois da certificação:
+#  
+# desm$certification <- NA
+# 
+# desm$certification[desm$year<=2007] <- "before"
+# desm$certification[desm$year>2007] <- "after"
+#  
+# # ano tem que ser fatorial
+#  
+# desm$year <- as.factor(desm$year)
+# 
+# # usando tempo antes como referencia
+# 
+# desm$certification <- relevel(as.factor(desm$certification),ref = "before")
+# 
+# # usando certificacao como referencia
+# 
+# desm$treatment <- relevel(as.factor(desm$treatment),ref = "certified")
+
+#summary(as.factor(desm$treatment))
+
+
+# write.csv(desm,"deforestation_matched_no_log.csv",row.names = F)
+
+#===============================================================================
+
+desm <- read.csv("deforestation_matched_no_log.csv")
+
+desm$year <- as.factor(desm$year)
+
+# corrigindo o nivel de referencia da categoria
+
+desm$certification <- relevel(as.factor(desm$certification),ref = "before")
+
+# usando certificacao como referencia
+
+ desm$treatment <- relevel(as.factor(desm$treatment),ref = "certified")
+
+```
+
+Analisando os dados brutos, fica claro que não há uma tendência temporal
+
+```{r echo=FALSE, fig.align='center', fig.cap="Desmatamento médio das propriedades certificadas e contrafactuais, pareadas via nearest neighbour. Os pontos representam os dados brutos, embora para facilitar a vizualização, eu restringi o limite do eixo y, excluindo diversos pontos da figura."}
+
+library(doBy)
+library(ggplot2)
+
+averages_bruto <- summaryBy(data = desm,def_rate~treatment+year) 
+
+
+def_year_bruto <- ggplot(data = desm, aes(x = year, y = def_rate))+
+  geom_point(aes(colour=treatment),alpha = 0.05)+
+  geom_line(data=averages_bruto,aes(x = year, y = def_rate.mean,group=treatment,colour=treatment),
+            size=0.8)+
+  #geom_ribbon(aes(x = year, ymin = lo.m01, ymax = up.m01), alpha = 1)+
+  #facet_wrap(~COD_IMOVEL, scales = "free") +
+  xlab("Year")+
+  ylab("deforestation rate")+
+  theme_bw()+
+  ylim(0,0.1)+
+  scale_x_discrete(labels=c(seq(97,99,1),seq(0,18,1)))+
+  geom_vline(xintercept = 11,linetype = "dashed",colour="red",size=1)
+
+
+def_year_bruto
+
+```
+
+Modelo de regressão em painel:
+
+```{r}
+
+
+
+m01 <- plm(formula = def_rate ~ treatment*certification, data = desm, effect="individual",model = "within", index = c("COD_IMOVEL","year"))
+
+summary(m01)
+
+m01c <- coef_test(m01, vcovCR(m01, cluster = desm$COD_IMOVEL, type = "CR1S"))
+
+m01c
+
+```
+
+
+## Regeneração (matching sem log)
+
+Calculei a taxa de regeneração usando a área regenerada sobre a área total da propriedade.
+
+```{r include=FALSE}
+
+#===============================================================================
+
+# mesma coisa, aqui gera o arquivo, mas ja salvei ele no disco
+
+#===============================================================================
+
+# #### abrindo arquivos ##########################################################
+# 
+# reg_cert <- read.csv(file.path(p2,"metricas_reg_certificadas.csv"))
+# reg_ncert <- read.csv(file.path(p2,"metricas_reg_n_certificadas.csv"))
+# names(reg_ncert)[1] <- "COD_IMOVEL"
+# reg_cert <- reg_cert[!duplicated(reg_cert$COD_IMOVEL),]
+# reg_ncert <- reg_ncert[!duplicated(reg_ncert$COD_IMOVEL),]
+# # 
+# # #### subset com propriedades de interesse ######################################
+# # 
+# reg_cert <- reg_cert[reg_cert$COD_IMOVEL %in% data$COD_IMOVEL,]
+# 
+# reg_ncert <- reg_ncert[reg_ncert$COD_IMO %in% data$COD_IMOVEL,]
+# # 
+# # # incluindo tratamento
+# # 
+# reg_cert$treatment <- 'certified'
+# reg_ncert$treatment <- 'n_certified'
+# # 
+# # # alterando formato
+# # 
+# # #### adicionando área do imovel ################################################
+# # 
+# reg_cert <- merge(reg_cert,data[data$treatment=="certified",c(1,8)])
+# 
+# 
+# reg_ncert <- merge(reg_ncert,data[data$treatment=="n_certified",c(1,8)],
+#                     by="COD_IMOVEL")
+# 
+# library(reshape2)
+# 
+# reg_cert_m <- melt(reg_cert,measure.vars = c(20:40))
+# reg_ncert_m <- melt(reg_ncert,measure.vars = c(26:46))
+# 
+# # # selecionando variaveis de interesse
+# # 
+# reg_cert_m <- reg_cert_m[,c(1,20:23)]
+# 
+# reg_ncert_m <- reg_ncert_m[,c(1,15,26,28,29)]
+# 
+# names(reg_ncert_m)[2] <- "area_im"
+# 
+# reg_ncert_m$area_im <- reg_ncert_m$area_im/10^4
+# 
+# # 
+# # # separando colunas
+# library(tidyr)
+# 
+# reg_cert_m <- reg_cert_m %>% separate(variable,c("variable","year"))
+# str(reg_cert_m)
+# reg_ncert_m <- reg_ncert_m %>% separate(variable,c("variable","year"))
+# str(reg_ncert_m)
+# names(reg_cert_m)[6] <- "regeneration_ha"
+# names(reg_ncert_m)[6] <- "regeneration_ha"
+# # 
+# reg_cert_m <- reg_cert_m[,-4]
+# reg_ncert_m <- reg_ncert_m[,-4]
+# 
+# reg <- rbind(reg_cert_m,reg_ncert_m)
+# 
+# reg$reg_rate <- reg$regeneration_ha/reg$area_im
+# 
+# reg$certification <- NA
+# # # 
+# reg$certification[reg$year<=2007] <- "before"
+# reg$certification[reg$year>2007] <- "after"
+# # 
+# # # ano tem que ser fatorial
+# # 
+# reg$year <- as.factor(reg$year)
+# # 
+# # 
+# reg$certification <- relevel(as.factor(reg$certification),ref = "before")
+# 
+# 
+# reg <- reg[,-c(3,5)]
+
+#write.csv(reg,"reforestation_matched_no_log.csv",row.names=F)
+
+
+reg <- read.csv("reforestation_matched_no_log.csv")
+
+reg$year <- as.factor(reg$year)
+
+# corrigindo o nivel de referencia da categoria
+
+reg$certification <- relevel(as.factor(reg$certification),ref = "before")
+
+# usando certificacao como referencia
+
+reg$treatment <- relevel(as.factor(reg$treatment),ref = "certified")
+
+```
+
+
+Grafico de tendências temporais:
+
+```{r echo=FALSE, fig.align='center',fig.cap="Regeneraçãp média nas propriedades certificadas e contrafactuais, pareadas via nearest neighbour. Os pontos representam os dados brutos, embora para facilitar a vizualização, eu restringi o limite do eixo y, excluindo diversos pontos da figura."}
+
+averages_bruto_reg <- summaryBy(data = reg,reg_rate~treatment+year) 
+
+
+reg_year_bruto <- ggplot(data = reg, aes(x = year, y = reg_rate))+
+  geom_point(aes(colour=treatment),alpha = 0.05)+
+  geom_line(data=averages_bruto_reg,aes(x = year, y = reg_rate.mean,group=treatment,colour=treatment),
+            size=0.8)+
+  #geom_ribbon(aes(x = year, ymin = lo.m01, ymax = up.m01), alpha = 1)+
+  #facet_wrap(~COD_IMOVEL, scales = "free") +
+  xlab("Year")+
+  ylab("regeneration rate")+
+  theme_bw()+
+  ylim(0,0.1)+
+  scale_x_discrete(labels=c(seq(97,99,1),seq(0,18,1)))+
+  geom_vline(xintercept = 11,linetype = "dashed",colour="red",size=1)
+
+reg_year_bruto
+
+```
+
+Regressão em painel:
+
+```{r}
+m02 <- plm(formula = reg_rate ~ treatment*certification, data = reg, effect="individual",model = "within", index = c("COD_IMOVEL","year"))
+
+summary(m02)
+
+
+m02c <- coef_test(m02, vcovCR(m02, cluster = reg$COD_IMOVEL, type = "CR1S"))
+
+m02c
+```
+
+## Desmatamento(matching com log)
+
+
+```{r include=FALSE}
+
+#===============================================================================
+
+## rodar abaixo apenas se precisar gerar planilha novamente
+
+#===============================================================================
+
+
+# p <- 'D:\\Doutorado\\cap3\\matching'
+# 
+# cont_log <- read.csv(file.path(p,'control_log.csv'))
+# 
+# treat_log <- read.csv(file.path(p,'treatment_log.csv'))
+# 
+# 
+# data_log <- rbind(cont_log,treat_log)
+# 
+# write.csv(data_log,"matched_properties_log.csv",row.names = F)
+# 
+# # Abrindo planilha de dados de desmatamento:
+# 
+# desm_cert <- read.csv(file.path(p2,"taxa_desmatamento_area_veg_cert.csv"))
+# 
+# desm_ncert <- read.csv(file.path(p2,"taxa_desmatamento_area_veg_ncert.csv"))# 
+# 
+# # subset
+# 
+# desm_cert_log <- desm_cert[desm_cert$COD_IMOVEL %in% data_log$COD_IMOVEL,]
+# 
+# desm_ncert_log <- desm_ncert[desm_ncert$COD_IMO %in% data_log$COD_IMOVEL,]
+# 
+# # incluindo tratamento
+# # 
+# desm_cert_log$treatment <- 'certified'
+# desm_ncert_log$treatment <- 'n_certified'
+# # 
+# # # dados de interesse
+# # 
+# desm_cert_log <- desm_cert_log[,c(2,13,18,19)]
+# desm_ncert_log <- desm_ncert_log[,c(2,18,23,24)]
+# # 
+# names(desm_ncert_log) <- names(desm_cert_log)
+# 
+# desm_log <- rbind(desm_ncert_log,desm_cert_log)
+# 
+# # excluindo 1996
+# 
+# desm_log <- desm_log[desm_log$year!=1996,]
+# # # codigo imovel como fator
+#  
+# desm_log$COD_IMOVEL <- as.factor(desm_log$COD_IMOVEL)
+# 
+# # criando dummy
+# 
+# desm_log$certification <- NA
+# 
+# desm_log$certification[desm_log$year<=2007] <- "before"
+# desm_log$certification[desm_log$year>2007] <- "after"
+# 
+# # ano tem que ser fatorial
+# 
+# desm_log$year <- as.factor(desm_log$year)
+
+
+#write.csv(desm_log,"deforestation_matched_log.csv",row.names = FALSE)
+
+desm_log <- read.csv("deforestation_matched_log.csv")
+
+
+desm_log$year <- as.factor(desm_log$year)
+
+# corrigindo o nivel de referencia da categoria
+
+desm_log$certification <- relevel(as.factor(desm_log$certification),ref = "before")
+
+# usando certificacao como referencia
+
+ desm_log$treatment <- relevel(as.factor(desm_log$treatment),ref = "certified")
+
+```
+
+```{r echo=FALSE, fig.align='center', fig.cap="Desmatamento médio das propriedades certificadas e contrafactuais, pareadas via nearest neighbour. Os pontos representam os dados brutos, embora para facilitar a vizualização, eu restringi o limite do eixo y, excluindo diversos pontos da figura."}
+
+
+averages_bruto_log <- summaryBy(data = desm_log,def_rate~treatment+year) 
+
+
+def_year_bruto_log <- ggplot(data = desm_log, aes(x = year, y = def_rate))+
+  geom_point(aes(colour=treatment),alpha = 0.05)+
+  geom_line(data=averages_bruto,aes(x = year, y = def_rate.mean,group=treatment,colour=treatment),
+            size=0.8)+
+  #geom_ribbon(aes(x = year, ymin = lo.m01, ymax = up.m01), alpha = 1)+
+  #facet_wrap(~COD_IMOVEL, scales = "free") +
+  xlab("Year")+
+  ylab("deforestation rate")+
+  theme_bw()+
+  ylim(0,0.1)+
+  scale_x_discrete(labels=c(seq(97,99,1),seq(0,18,1)))+
+  geom_vline(xintercept = 11,linetype = "dashed",colour="red",size=1)
+
+
+def_year_bruto_log
+
+```
+
+Modelo de regressão em painel:
+
+```{r}
+
+
+
+
+m03 <- plm(formula = def_rate ~ treatment*certification, data = desm_log, effect="individual",model = "within", index = c("COD_IMOVEL","year"))
+
+summary(m03)
+
+m03c <- coef_test(m03, vcovCR(m03, cluster = desm_log$COD_IMOVEL, type = "CR1S"))
+
+m03c
+
+```
+
+## Regeneração (matching com log)
+
+```{r include=FALSE}
+
+#===============================================================================
+
+# mesma coisa, aqui gera o arquivo, mas ja salvei ele no disco
+
+#===============================================================================
+
+#### abrindo arquivos ##########################################################
+
+# reg_cert_log <- read.csv(file.path(p2,"metricas_reg_certificadas.csv"))
+# reg_ncert_log <- read.csv(file.path(p2,"metricas_reg_n_certificadas.csv"))
+# 
+# names(reg_ncert_log)[1] <- "COD_IMOVEL"
+# reg_cert_log <- reg_cert_log[!duplicated(reg_cert_log$COD_IMOVEL),]
+# reg_ncert_log <- reg_ncert_log[!duplicated(reg_ncert_log$COD_IMOVEL),]
+# #
+# # #### subset com propriedades de interesse ######################################
+# #
+# reg_cert_log <- reg_cert_log[reg_cert_log$COD_IMOVEL %in% data_log$COD_IMOVEL,]
+# 
+# reg_ncert_log <- reg_ncert_log[reg_ncert_log$COD_IMOVEL %in% data_log$COD_IMOVEL,]
+# #
+# # # incluindo tratamento
+# #
+# reg_cert_log$treatment <- 'certified'
+# reg_ncert_log$treatment <- 'n_certified'
+# #
+# # # alterando formato
+# #
+# # #### adicionando área do imovel ################################################
+# #
+# reg_cert_log <- merge(reg_cert_log,data_log[data_log$treatment=="certified",c(1,8)])
+# 
+# reg_ncert_log <- merge(reg_ncert_log,data_log[data_log$treatment=="n_certified",c(1,8)],
+#                     by="COD_IMOVEL")
+# 
+# reg_cert_log_m <- melt(reg_cert_log,measure.vars = c(20:40))
+# reg_ncert_log_m <- melt(reg_ncert_log,measure.vars = c(26:46))
+# 
+# # # selecionando variaveis de interesse
+# #
+# reg_cert_log_m <- reg_cert_log_m[,c(1,20:23)]
+# 
+# reg_ncert_log_m <- reg_ncert_log_m[,c(1,15,26,28,29)]
+# 
+# names(reg_ncert_log_m)[2] <- "area_im"
+# 
+# reg_ncert_log_m$area_im <- reg_ncert_log_m$area_im/10^4
+# 
+# #
+# # # separando colunas
+# 
+# reg_cert_log_m <- reg_cert_log_m %>% separate(variable,c("variable","year"))
+# reg_ncert_log_m <- reg_ncert_log_m %>% separate(variable,c("variable","year"))
+# str(reg_ncert_m)
+# names(reg_cert_log_m)[6] <- "regeneration_ha"
+# names(reg_ncert_log_m)[6] <- "regeneration_ha"
+# #
+# reg_cert_log_m <- reg_cert_log_m[,-c(4)]
+# reg_ncert_log_m <- reg_ncert_log_m[,-c(4)]
+# 
+# reg_log <- rbind(reg_cert_log_m,reg_ncert_log_m)
+# 
+# reg_log$reg_rate <- reg_log$regeneration_ha/reg_log$area_im
+# 
+# reg_log$certification <- NA
+# # #
+# reg_log$certification[reg_log$year<=2007] <- "before"
+# reg_log$certification[reg_log$year>2007] <- "after"
+# #
+# # # ano tem que ser fatorial
+# #
+# reg_log$year <- as.factor(reg_log$year)
+# #
+# #
+# reg_log$certification <- relevel(as.factor(reg_log$certification),ref = "before")
+# 
+# 
+# reg_log <- reg_log[,-c(3,5)]
+
+# write.csv(reg_log,"reforestation_matched_log.csv",row.names=F)
+
+
+reg_log <- read.csv("reforestation_matched_log.csv")
+
+reg_log$year <- as.factor(reg_log$year)
+
+# corrigindo o nivel de referencia da categoria
+
+reg_log$certification <- relevel(as.factor(reg_log$certification),ref = "before")
+
+# usando certificacao como referencia
+
+reg_log$treatment <- relevel(as.factor(reg_log$treatment),ref = "certified")
+
+```
+
+Tendencia temporal:
+
+```{r echo=FALSE, fig.align='center',fig.cap="Regeneraçãp média nas propriedades certificadas e contrafactuais, pareadas via nearest neighbour. Os pontos representam os dados brutos, embora para facilitar a vizualização, eu restringi o limite do eixo y, excluindo diversos pontos da figura."}
+
+averages_bruto_reg_log <- summaryBy(data = reg_log,reg_rate~treatment+year) 
+
+
+reg_year_bruto_log <- ggplot(data = reg_log, aes(x = year, y = reg_rate))+
+  geom_point(aes(colour=treatment),alpha = 0.05)+
+  geom_line(data=averages_bruto_reg,aes(x = year, y = reg_rate.mean,group=treatment,colour=treatment),
+            size=0.8)+
+  #geom_ribbon(aes(x = year, ymin = lo.m01, ymax = up.m01), alpha = 1)+
+  #facet_wrap(~COD_IMOVEL, scales = "free") +
+  xlab("Year")+
+  ylab("regeneration rate")+
+  theme_bw()+
+  ylim(0,0.1)+
+  scale_x_discrete(labels=c(seq(97,99,1),seq(0,18,1)))+
+  geom_vline(xintercept = 11,linetype = "dashed",colour="red",size=1)
+
+reg_year_bruto_log
+
+```
+
+
+Modelo de regressão em painel:
+
+```{r}
+
+
+
+
+m04 <- plm(formula = reg_rate ~ treatment*certification, data = reg_log, effect="individual",model = "within", index = c("COD_IMOVEL","year"))
+
+summary(m04)
+
+m04c <- coef_test(m04, vcovCR(m04, cluster = reg_log$COD_IMOVEL, type = "CR1S"))
+
+m04c
+
+```
