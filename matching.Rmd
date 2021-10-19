@@ -6,8 +6,90 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE,warning = FALSE)
+
+################################################################################
+#### pacotes
+################################################################################
+
+library(sf)
+
 ```
 
-## R Markdown
+## Pareando as propriedades certificadas e nao certificadas
+
+```{r include=FALSE}
+
+# Os dados estão todos no seguinte caminho (substituir por link do drive!):
+
+# link: https://drive.google.com/drive/folders/1J4SWKgCICBbMZX2WeANjvuIg_jz3Mu_l?usp=sharing
+
+# pasta raiz
+p <- dirname(getwd())
+
+# pasta com as planilhas longitudinais
+
+d <- "metricas/melted_tables"
+
+# listando arquvivos
+
+planilhas <- list.files(file.path(p,d))
+
+```
+
+
+Data dos contratos de certificação:
+
+```{r echo=FALSE}
+
+# caminho dos shapes (tb vale criar um link no drive depois!)
+
+p_cert <- file.path(p,"dados_Imaflora_RA_clean")
+
+# esses dados nao contem as propriedades adicionais da cooxupe! o n real é de
+# 537 propriedades, mas o inicio da certificação é o mesmo
+certificadas <- read.csv(file.path(p_cert,"propriedades_certificadas.csv"),
+                         row.names = 1)
+
+summary(as.Date(certificadas$Date.Issued))
+
+
+```
+
+A data mais antiga é 2009, logo consideramos os 5 anos anteriores para o matching.
+
+Variáveis do pareamento:
+
+- desmatamento acumulado entre 2004 e 2009;
+- presença de RL;
+- bioma;
+- regeneração acumulada (ainda nao decidimos);
+- área da propriedade em módulos fiscais;
+- declividade média;
+- proporção de pastagem;
+
+```{r include=FALSE}
+################################################################################
+#### gerando a planilha de dados
+################################################################################
+
+# *** OBS *** : uma vez gerada, nao preciso rodar esse trecho novamente salvo
+# mudanças nos dados
+
+# abrindo propriedades certificadas:
+
+p_propriedades
+
+treatment <- 
+
+
+
+
+```
+
+
+
+
+
+
 
