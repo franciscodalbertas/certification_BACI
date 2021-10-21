@@ -20,7 +20,10 @@ require(MatchIt)
 require(optmatch)
 library(ggpubr)
 library(scales)
+####
+
 ```
+
 
 ## Pareando as propriedades certificadas e nao certificadas
 
@@ -33,13 +36,6 @@ library(scales)
 # pasta raiz
 p <- dirname(getwd())
 
-# pasta com as planilhas longitudinais
-
-d <- "metricas/melted_tables"
-
-# listando arquvivos
-
-planilhas <- list.files(file.path(p,d),full.names = T)
 
 ```
 
@@ -166,7 +162,7 @@ ggbarplot(rl,fill = "LR bin",y="prop",x = "Var2")+facet_grid("Var3")
 
 ```{r}
 
-nn_ma <-matchit(formula, data=df_ma, method="nearest", ratio=1, caliper = 0.2)
+nn_ma <-matchit(formula, data=df_ma, method="nearest", ratio=4, caliper = 0.2,replace = T)
  
 summary(nn_ma, standardize = TRUE)
 
@@ -177,7 +173,7 @@ summary(nn_ma, standardize = TRUE)
 
 ```{r echo=FALSE}
 
-nn_ce <-matchit(formula, data=df_ce, method="nearest", ratio=1, caliper = 0.25)
+nn_ce <-matchit(formula, data=df_ce, method="nearest", ratio=4, caliper = 0.25,replace = T)
  
 summary(nn_ce, standardize = TRUE)
 
