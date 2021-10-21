@@ -20,7 +20,10 @@ require(MatchIt)
 require(optmatch)
 library(ggpubr)
 library(scales)
+####
+
 ```
+
 
 ## Pareando as propriedades certificadas e nao certificadas
 
