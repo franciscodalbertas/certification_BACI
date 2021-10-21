@@ -123,8 +123,6 @@ df_ce <- subset(data.rand1,subset = biome=="CERRADO")
 ```
 
 
-### Modelo para a mata atlântica:
-
 Distribuicao das variaveis
 
 ```{r echo=FALSE}
@@ -160,6 +158,10 @@ rl$prop[rl$Var2=="non certified"&rl$Var3=="MATA ATLÂNTICA"] <- rl$Freq[rl$Var2=
 ggbarplot(rl,fill = "LR bin",y="prop",x = "Var2")+facet_grid("Var3")
 
 ```
+
+### Modelo para a mata atlântica:
+
+
 
 
 ```{r}
