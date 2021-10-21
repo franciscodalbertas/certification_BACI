@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE,warning = FALSE)
 ################################################################################
 
 library(sf)
+<<<<<<< HEAD
 library(dplyr)
 library(tidyr)
 library(plm)
@@ -20,6 +21,9 @@ require(MatchIt)
 require(optmatch)
 library(ggpubr)
 library(scales)
+=======
+
+>>>>>>> 3ce0720249b4188021fbd9d04c1b29ed9c931b4b
 ```
 
 ## Pareando as propriedades certificadas e nao certificadas
@@ -39,7 +43,11 @@ d <- "metricas/melted_tables"
 
 # listando arquvivos
 
+<<<<<<< HEAD
 planilhas <- list.files(file.path(p,d),full.names = T)
+=======
+planilhas <- list.files(file.path(p,d))
+>>>>>>> 3ce0720249b4188021fbd9d04c1b29ed9c931b4b
 
 ```
 
@@ -58,6 +66,7 @@ certificadas <- read.csv(file.path(p_cert,"propriedades_certificadas.csv"),
                          row.names = 1)
 
 summary(as.Date(certificadas$Date.Issued))
+<<<<<<< HEAD
 rm(certificadas)
 
 ```
@@ -197,6 +206,48 @@ plot(summary(nn_ma),xlim=c(0,0.7))
 
 ```
 
+=======
+
+
+```
+
+A data mais antiga é 2009, logo consideramos os 5 anos anteriores para o matching.
+
+Variáveis do pareamento:
+
+- desmatamento acumulado entre 2004 e 2009;
+- presença de RL;
+- bioma;
+- regeneração acumulada (ainda nao decidimos);
+- área da propriedade em módulos fiscais;
+- declividade média;
+- proporção de pastagem;
+
+```{r include=FALSE}
+################################################################################
+#### gerando a planilha de dados
+################################################################################
+
+# *** OBS *** : uma vez gerada, nao preciso rodar esse trecho novamente salvo
+# mudanças nos dados
+
+# abrindo propriedades certificadas:
+
+p_propriedades
+
+treatment <- 
+
+
+
+
+```
+
+
+
+
+
+
+>>>>>>> 3ce0720249b4188021fbd9d04c1b29ed9c931b4b
 
 
 
