@@ -233,9 +233,6 @@ ggbarplot(rl,fill = "LR bin",y="prop",x = "Var2")+facet_grid("Var3")
 
 ### Modelo para a mata atlântica:
 
-
-
-
 ```{r}
 
 nn_ma <-matchit(formula6, data=df_ma, method="nearest", ratio=4, caliper = 0.25,replace = T)
@@ -271,9 +268,6 @@ plot(summary(nn_ma),xlim=c(0,0.7))
 
 ```
 
-
-
-
 #### CE
 
 ```{r }
@@ -287,3 +281,28 @@ plot(nn_ce,"hist")
 plot(summary(nn_ce,standardize = TRUE),xlim=c(0,1))
 
 ```
+
+
+
+
+```{r echo=FALSE}
+
+###################################################
+#### Gerando os dados pareados
+###################################################
+
+
+control_ce<-match.data(nn_ce, group="control")
+(treated_ce<-match.data(nn_ce, group="treat"))
+(sort(treated.ce[ ,1]))
+dim(treated.ce)
+(control.nn_ce_id<-control_nn_ce[ ,1])
+(sort(control.nn_ce_id))
+(nn_ce$match.matrix)
+
+write.csv(control_ce,"control_ce.csv",row.names = F)
+write.csv(treated_ce,"treatment_ce.csv",row.names = F)
+
+
+```
+
