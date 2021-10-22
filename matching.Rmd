@@ -62,12 +62,10 @@ Variáveis do pareamento:
 - presença de RL;
 - bioma;
 - regeneração acumulada (ainda nao decidimos);
-- área da propriedade (em módulos fiscais o ajuste ficou pior);
+- área da propriedade;
 - declividade média;
 - proporção de pastagem;
 - proporção de vegetação nativa;
-
-## Modelos
 
 
 Distribuicao de propriedades certificadas entre MA e CE:
@@ -78,9 +76,53 @@ df <- read.csv("data_for_matching.csv")
 names(df)[8] <- "biome"
 summary(as.factor(df$biome[df$treatment=="certified"]))
 
+# converter RL to factor
+
+df$LR_bin <- as.factor(df$LR_bin)
+
+# transformando area em variavel categorica
+
+df$area_ct <- NA
+
+df$area_ct[df$area_im_mf<=4] <- "s"
+
+df$area_ct[df$area_im_mf>4&df$area_im_mf<=15] <- "m"
+
+df$area_ct[df$area_im_mf>15] <- "l"
+
+df$area_ct <- as.factor(df$area_ct)
+
+# corrigindo limite prop veg
+
+df$prop_veg_09[df$prop_veg_09>1] <- 1
+
+
 ```
 
 
+Distribuição de tamanho das propriedades de forma categorica (large, medium, small)
+
+```{r echo=FALSE}
+
+summary(df$area_ct)
+
+
+```
+
+Distribuição da proporcao de pastagens de forma categorica:
+
+```{r echo=FALSE}
+
+df$prop_past_09_ct <- cut(df$prop_past_09,breaks = c(-0.1,0.5,1.1)  )
+
+summary(df$prop_past_09_ct)
+
+
+```
+
+
+
+## Modelos
 
 ```{r include=FALSE}
 # Aqui gera uma matrix aleatória que a gente pode repetir
@@ -98,12 +140,34 @@ data.rand1$treatment <- relevel(data.rand1$treatment, ref = "non certified")
 
 ```{r}
 
-formula <- treatment ~ desm_ac + LR_bin + propAPP +area_im + prop_veg_09  + prop_past_09+ mean_slope + reg_ac
+# formula com slope
+
+formula <- treatment ~ desm_ac + LR_bin + propAPP +area_im_mf + prop_veg_09  + prop_past_09_ct+ mean_slope 
+
+# formula sem slope (pro cerrado pode valer a pena)
+
+formula2 <- treatment ~ desm_ac + LR_bin + propAPP +area_ct + prop_veg_09  + prop_past_09 
+
+# formula com APP categorico
+
+formula3 <- treatment ~ desm_ac + LR_bin + propAPP_ct +area_ct + prop_veg_09  + prop_past_09 
+
+# formula com veg categorico
+
+formula4 <- treatment ~ desm_ac + LR_bin + propAPP +area_ct + prop_veg_09_ct  + prop_past_09 
+
+# formula com veg categorico
+
+formula5 <- treatment ~ desm_ac + LR_bin + propAPP +area_ct + prop_veg_09  + prop_past_09_ct 
+
+# formula com area im cat
+
+formula6 <- treatment ~ desm_ac + LR_bin + propAPP +area_ct + prop_veg_09  + prop_past_09_ct+ mean_slope + reg_ac
 
 ```
 
 
-Após testar diferentes metofologias, verificamos que **Nearest Neighbour** foi a que gerou pareamento mais satisfatório.
+Após testar diferentes formulas, verificamos que o modelo 6 apresenta o melhor pareamento. Nesse modelo, a proporção de pastagem e o tamanho das propriedades foram tratados de forma categorica (**discutir isso**)
 
 
 ```{r echo=FALSE}
@@ -111,11 +175,27 @@ Após testar diferentes metofologias, verificamos que **Nearest Neighbour** foi 
 df_ma <- subset(data.rand1,subset = biome=="MATA ATLÂNTICA")
 df_ce <- subset(data.rand1,subset = biome=="CERRADO")
 
+# criando variavel APP como categorica tb
+
+df_ce$propAPP_ct <- as.factor (cut(df_ce$propAPP,breaks = 2))
+
+summary(df_ce$propAPP_ct)
+
+# criando prop veg cat
+
+df_ce$prop_veg_09_ct <- cut(df_ce$prop_veg_09,breaks = c(-0.1,0.2,1.1)  )
+
+
+# criando past cat
+
+df_ce$prop_past_09_ct <- cut(df_ce$prop_veg_09,breaks = c(-0.1,0.5,1.1)  )
+
+df_ma$prop_past_09_ct <- cut(df_ma$prop_veg_09,breaks = c(-0.1,0.5,1.1)  )
 
 ```
 
 
-Distribuicao das variaveis
+### Distribuicao das variaveis
 
 ```{r echo=FALSE}
 
@@ -158,7 +238,7 @@ ggbarplot(rl,fill = "LR bin",y="prop",x = "Var2")+facet_grid("Var3")
 
 ```{r}
 
-nn_ma <-matchit(formula, data=df_ma, method="nearest", ratio=4, caliper = 0.2,replace = T)
+nn_ma <-matchit(formula6, data=df_ma, method="nearest", ratio=4, caliper = 0.25,replace = T)
  
 summary(nn_ma, standardize = TRUE)
 
@@ -169,7 +249,7 @@ summary(nn_ma, standardize = TRUE)
 
 ```{r echo=FALSE}
 
-nn_ce <-matchit(formula, data=df_ce, method="nearest", ratio=4, caliper = 0.25,replace = T)
+nn_ce <-matchit(formula6, data=df_ce, method="nearest", ratio=4, caliper = 0.25,replace = T)
  
 summary(nn_ce, standardize = TRUE)
 
@@ -204,6 +284,6 @@ plot(nn_ce,"jitter")
 
 plot(nn_ce,"hist")
 
-plot(summary(nn_ce),xlim=c(0,0.7))
+plot(summary(nn_ce,standardize = TRUE),xlim=c(0,1))
 
 ```
