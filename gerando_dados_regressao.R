@@ -200,3 +200,88 @@ final_df <- rbind(df_full_s4,df_full_s_control)
 # salvando
 
 write.csv(final_df,"data_for_panel_regression.csv",row.names = F)
+
+
+#==== criando coluna de antes e depois =========================================
+
+# pras certificadas é mais facil
+
+
+str(final_df)
+
+final_df$Date.Issued <- as.Date(final_df$Date.Issued)
+
+?as.Date
+
+format(as.Date(final_df$Date.Issued),"%Y")
+
+# antes =0; depois =1
+
+
+final_df$certification_cat[final_df$treatment=="certified"&
+                             format(final_df$Date.Issued,"%Y")<=final_df$year] <- 
+  1
+
+
+final_df$certification_cat[final_df$treatment=="certified"&
+                             format(final_df$Date.Issued,"%Y")>final_df$year] <- 
+  0
+
+
+################################################################################
+
+## OBS : talvez eu precisa fazer um matching pra cada conta
+
+# We define a fixed effect factor, years after treatment (YAT), 
+# which represents the number of years since the action
+
+# como calcular anos pos tratamento pros controle?
+
+# boa ref:
+# https://mixtape.scunning.com/difference-in-differences.html
+# indica como ex esse paper q eh exatamente oq eu faço:
+# https://www.nber.org/system/files/working_papers/w26081/w26081.pdf
+
+# a solucao: no caso do controle, a coluna de impacto fica com valor 0
+# pra todos. e eu ploto os coeficientes dos anos, igual na figura. Muito legal!
+
+################################################################################
+
+final_df$certification_cat[final_df$treatment=="non certified"] <- 
+  0
+
+#==== calculando tempo do evento ===============================================
+
+# os valores devem ser centrados em 0, contendo valores negativos( before) e 
+# positivos (after)
+
+# nesse caso,  fica como zero pros controle tb
+
+# valor zero controle
+
+final_df$event_time[final_df$treatment=="non certified"] <- 0
+
+
+# ano referencia tratamento
+final_df$event_time[final_df$treatment=="certified"&
+                      format(final_df$Date.Issued,"%Y")==final_df$year] <- 0
+
+
+# ano referencia tratamento
+final_df$event_time[final_df$treatment=="certified"&
+                      format(final_df$Date.Issued,"%Y")==final_df$year] <- 0
+
+
+final_df$event_time[final_df$treatment=="certified"&
+                      format(final_df$Date.Issued,"%Y")!=final_df$year] <- 
+  final_df$year[final_df$treatment=="certified"&
+                  format(final_df$Date.Issued,"%Y")!=final_df$year]-
+  as.integer(format(final_df$Date.Issued,"%Y"))[final_df$treatment=="certified"&
+                              format(final_df$Date.Issued,"%Y")!=final_df$year]
+
+
+
+summary(final_df$event_time)
+hist(final_df$event_time)
+
+write.csv(final_df,"data_for_panel_regression.csv",row.names = F)
