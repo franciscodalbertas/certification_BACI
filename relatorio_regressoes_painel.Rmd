@@ -1,0 +1,217 @@
+---
+title: "Efetividade da certificação"
+author: "Francisco d'Albertas"
+date: "27/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE,warning = FALSE)
+
+#==== packages =================================================================
+
+library(plm)
+library(clubSandwich)
+library(ggplot2)
+library(ggpubr)
+#===============================================================================
+
+df <- read.csv('data_for_panel_regression.csv')
+
+# lendo os dados
+
+# subset apenas alguns anos, usando o tempo decorrido
+
+# data pra ter -5
+
+ano_ma <- min(df$year[df$event_time>=-5&df$treatment=="certified"&
+                        df$biome=="Atlantic Forest"])
+
+df2 <- df[df$year>=2004,]
+
+df2$treatment <- as.factor(df2$treatment)
+df2$certification_cat <- as.factor(df2$certification_cat)
+df2$year <- as.factor(df2$year)
+
+df2$event_time <- as.factor(df2$event_time)
+
+dfma <- df2[df2$biome=="Atlantic Forest"&df2$year!=2004,]
+
+dfce <- df2[df2$biome=="Cerrado",]
+
+```
+
+
+Após parear propriedades controle, já dá pra testar se o pareamento foi bom; se há alguma tendência.
+
+
+Para cada propriedade certificada, eu calculei a diferença de tempo entre a certificação e os anos do período analisado (2004-1017). Esses valores podem ser negativos -- anos anteriores a certificação -- ou positivos -- anos posteriores a certificação. No ano da certificação, o valor é zero. No caso das propriedades certificadas, atribui um valor zero para todas.
+
+### Desmatamento
+
+A taxa de desmatamento foi calculada sobre a área de vegetação nativa de cada propriedade
+
+
+**Regressão em painel para Mata Atlântica:**
+```{r }
+
+m02 <- plm(formula = def_rate_1 ~ treatment*event_time, data = dfma, 
+           effect="individual",model = "within", index = c("COD_IMOVEL","year"))
+
+
+summary(m02)
+
+
+
+```
+
+O coeficiente da interação não esta sendo estimado, nao sei porque.
+
+**Regressão em painel para Cerrado:**
+
+```{r}
+
+m03 <- plm(formula = def_rate_1 ~ treatment*event_time, data = dfce, 
+           effect="individual",model = "within", index = c("COD_IMOVEL","year"))
+
+
+summary(m03)
+
+
+
+```
+
+** Segui o mesmo padrão para as outras variáveis dependentes: taxa de regeneração (calculada como a razão entre a área regenerada e a área da propriedade) e a razão de vegetação nativa (área de vegetação nativa/[area equivalente a 20% da propriedade)
+
+### Representação gráfica dos resultados
+
+```{r echo=FALSE, fig.cap="Figura1. Taxa de desmatamento"}
+
+coef <-coef_test(m02, vcovCR(m02, cluster = dfma$COD_IMOVEL, type = "CR1S"))
+
+coef$variables <- row.names(coef)
+
+coef_ce <-coef_test(m03, vcovCR(m03, cluster = dfce$COD_IMOVEL, type = "CR1S"))
+
+coef_ce$variables <- row.names(coef_ce)
+
+
+ma_p <- ggplot(coef, aes(x=variables, y=beta)) + 
+  geom_errorbar(aes(ymin=beta-SE, ymax=beta+SE), width=.1) +
+  #geom_line(position=pd) +
+  geom_point()+
+  geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
+  scale_x_discrete(labels=seq(-13,8,1))+
+  xlab("")+
+  geom_vline(xintercept=15, linetype="dashed",color = "black", size=1)+
+  theme_classic()+
+  ggtitle("Atlantic Forest") 
+
+
+ce_p <- ggplot(coef_ce, aes(x=variables, y=beta)) + 
+  geom_errorbar(aes(ymin=beta-SE, ymax=beta+SE), width=.1) +
+  #geom_line(position=pd) +
+  geom_point()+
+  geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
+  scale_x_discrete(labels=seq(-14,8,1))+
+  xlab("")+
+  geom_vline(xintercept=15, linetype="dashed",color = "black", size=1)+
+  theme_classic()+
+  ggtitle("Cerrado")
+
+ggarrange(ma_p,ce_p,nrow = 2)
+
+```
+
+```{r echo=FALSE, fig.cap="Figura2. Taxa de regeneração"}
+
+m04 <- plm(formula = reg_rate ~ treatment*event_time, data = dfma, 
+           effect="individual",model = "within", index = c("COD_IMOVEL","year"))
+
+
+coef_ma_reg <-coef_test(m04, vcovCR(m04, cluster = dfma$COD_IMOVEL, type = "CR1S"))
+
+coef_ma_reg$variables <- row.names(coef_ma_reg)
+
+ma_p_reg <- ggplot(coef_ma_reg, aes(x=variables, y=beta)) + 
+  geom_errorbar(aes(ymin=beta-SE, ymax=beta+SE), width=.1) +
+  #geom_line(position=pd) +
+  geom_point()+
+  geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
+  scale_x_discrete(labels=seq(-13,8,1))+
+  xlab("")+
+  geom_vline(xintercept=15, linetype="dashed",color = "black", size=1)+
+  theme_classic()+
+  ggtitle("Atlantic Forest")
+
+
+m05 <- plm(formula = reg_rate ~ treatment*event_time, data = dfce, 
+           effect="individual",model = "within", index = c("COD_IMOVEL","year"))
+
+
+coef_ce_reg <-coef_test(m05, vcovCR(m05, cluster = dfce$COD_IMOVEL, type = "CR1S"))
+
+coef_ce_reg$variables <- row.names(coef_ce_reg)
+
+ce_p_reg <- ggplot(coef_ce_reg, aes(x=variables, y=beta)) + 
+  geom_errorbar(aes(ymin=beta-SE, ymax=beta+SE), width=.1) +
+  #geom_line(position=pd) +
+  geom_point()+
+  geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
+  scale_x_discrete(labels=seq(-14,8,1))+
+  xlab("")+
+  geom_vline(xintercept=15, linetype="dashed",color = "black", size=1)+
+  theme_classic()+
+  ggtitle("Cerrado")
+
+ggarrange(ma_p_reg,ce_p_reg,nrow = 2)
+```
+
+```{r echo=FALSE,fig.cap="Figura 3. Razão de cobertura de vegetação"}
+m06 <- plm(formula = p_veg ~ treatment*event_time, data = dfma, 
+           effect="individual",model = "within", index = c("COD_IMOVEL","year"))
+
+
+coef_ma_pveg <-coef_test(m06, vcovCR(m06, cluster = dfma$COD_IMOVEL, type = "CR1S"))
+
+coef_ma_pveg$variables <- row.names(coef_ma_pveg)
+
+ma_p_veg <- ggplot(coef_ma_pveg, aes(x=variables, y=beta)) + 
+  geom_errorbar(aes(ymin=beta-SE, ymax=beta+SE), width=.1) +
+  #geom_line(position=pd) +
+  geom_point()+
+  geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
+  scale_x_discrete(labels=seq(-13,8,1))+
+  xlab("")+
+  geom_vline(xintercept=15, linetype="dashed",color = "black", size=1)+
+  theme_classic()+
+  ggtitle("Atlantic Forest")
+
+m07 <- plm(formula = p_veg ~ treatment*event_time, data = dfce, 
+           effect="individual",model = "within", index = c("COD_IMOVEL","year"))
+
+
+coef_ce_pveg <-coef_test(m07, vcovCR(m07, cluster = dfce$COD_IMOVEL, type = "CR1S"))
+
+coef_ce_pveg$variables <- row.names(coef_ce_pveg)
+
+ce_p_veg <- ggplot(coef_ce_pveg, aes(x=variables, y=beta)) + 
+  geom_errorbar(aes(ymin=beta-SE, ymax=beta+SE), width=.1) +
+  #geom_line(position=pd) +
+  geom_point()+
+  geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
+  scale_x_discrete(labels=seq(-14,8,1))+
+  xlab("")+
+  geom_vline(xintercept=15, linetype="dashed",color = "black", size=1)+
+  theme_classic()+
+  ggtitle("Cerrado")
+
+ggarrange(ma_p_veg,ce_p_veg,nrow = 2)
+
+```
+
+### Observações
+
+Além da discussão sobre se os modelos estão corretos, parece que o pareamento não foi muito efetivo. Isso porque se os gráficos estão corretos e indicam a diferença entre as propriedades certificadas e não certificadas, as barras de erro à esquerda da linha vertical pontilhada deveriam estar mais perto do zero, cruzando o zero de preferência.
+
+Pro cerrado esse efeito parece ainda pior.
