@@ -28,6 +28,9 @@ Br <- read_country()
 Biomes <- read_biomes(year = 2019, simplified = TRUE, showProgress = TRUE)%>%
   filter(code_biome==3|code_biome==4)
 
+str(Biomes$name_biome)
+
+Biomes$name_biome[Biomes$name_biome=="Mata Atlântica"] <- "Atlantic forest"
 
 
 # criando area de zoom 
@@ -90,29 +93,60 @@ mun_crop <- st_crop(x = mun,box2)
 
 # plotando mun cert 
 
+# municipios_certificados <- ggplot() +
+#   geom_sf(data = Br,color=NA)+
+#   #geom_sf(data=mun_crop,fill="NA",color="white")+
+#   geom_sf(data=Biomes,aes(fill=c("gray","darkgray")))+
+#   geom_sf(data=mun2,aes( fill=Freq),color="white") +
+#   coord_sf(xlim = c(-49, -40), 
+#            ylim = c(-23, -15), 
+#            expand = T)+
+#   scale_fill_viridis(name="n farms")+
+#   
+#   annotation_scale(location="br")+
+#   annotation_north_arrow(location = "tr", 
+#   which_north = "true", 
+#   style = north_arrow_fancy_orienteering)+
+#   theme(legend.position="top")+
+#   theme_pubclean() 
+
+ 
+# tentando enfiar outra legenda! pro bioma! ainda nao deu!
+# falta so arrumar nome
+library(ggnewscale)
+
 municipios_certificados <- ggplot() +
   geom_sf(data = Br,color=NA)+
   #geom_sf(data=mun_crop,fill="NA",color="white")+
-  geom_sf(data=Biomes,fill=c("gray","darkgray"))+
-  geom_sf(data=mun2,aes( fill=Freq),color="black") +
+  geom_sf(data=Biomes,aes(fill=name_biome),show.legend=T)+
+  scale_fill_manual(values=c("gray","darkgray"))+
+  labs(fill="")+
+  new_scale_fill()+
+  geom_sf(data=mun2,aes(fill=Freq),color="white") +
   coord_sf(xlim = c(-49, -40), 
            ylim = c(-23, -15), 
            expand = T)+
   scale_fill_viridis(name="n farms")+
+  
   annotation_scale(location="br")+
   annotation_north_arrow(location = "tr", 
-  which_north = "true", 
-  style = north_arrow_fancy_orienteering)+
+                         which_north = "true", 
+                         style = north_arrow_fancy_orienteering)+
   theme(legend.position="top")+
   theme_pubclean() 
 
 
-
-
 # como sobrepor grafico!!! patchwork!!!!
 
-final <- municipios_certificados + inset_element(Limites_BR, left = 0, 
-       bottom = 0.8, right = 0.2, top = 1)
+# final <- municipios_certificados + inset_element(Limites_BR, left = 0, 
+#        bottom = 0.8, right = 0.2, top = 1)
+
+
+final <-municipios_certificados + inset_element(Limites_BR, left = 0, 
+              bottom = 0.7, right = 0.32, top = 1,align_to = 'panel')
+
+
+
 
 #==== figura 2 =================================================================
 
@@ -193,6 +227,13 @@ detach("package:egg", unload=TRUE)
 ggarrange(final,figuras,heights = c(4,1))
 
 
-ggsave(filename = "figures/study_site.jpg",plot = final2,width = 21,height = 20,
-       units = "cm",)
+ggsave(filename = "figures/study_site.jpg",plot = final2,width = 14,height = 15,
+       units = "cm",scale = 1.5)
 
+library(egg)
+
+p1+duracao+final
+opcao2 <- final+p1+duracao
+
+ggsave(filename = "figures/study_site2.jpg",plot = opcao2,width = 25,height = 14,
+       units = "cm",scale = 1)
