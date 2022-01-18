@@ -7,9 +7,8 @@ library(dplyr)
 library(tidyr)
 
 #################################################################################
-# Os dados estão todos no seguinte caminho (substituir por link do drive!):
 
-# link: https://drive.google.com/drive/folders/1J4SWKgCICBbMZX2WeANjvuIg_jz3Mu_l?usp=sharing
+# Os dados estarao no github (mas preciso eliminar o CAR antes)
 
 # pasta raiz
 p <- dirname(getwd())
@@ -32,36 +31,36 @@ planilhas <- list.files(file.path(p,d),full.names = T)
 # abrindo propriedades certificadas:
 
 # p_propriedades <- file.path(p,"limites_propriedades")
-# 
-# treatment <- st_read(file.path(p_propriedades,"tratamento.shp")) 
-# 
+#
+# treatment <- st_read(file.path(p_propriedades,"tratamento.shp"))
+#
 # # excluindo info. espacial
-# 
+#
 # st_geometry(treatment) <- NULL
-# 
-# 
-# control <- st_read(file.path(p_propriedades,"controle.shp")) 
-# 
-# 
+#
+#
+# control <- st_read(file.path(p_propriedades,"controle.shp"))
+#
+#
 # control <- st_make_valid(control)
 # control$area_im <- as.numeric(st_area(control)/10^4)
-# 
+#
 # # excluindo info. espacial
-# 
+#
 # st_geometry(control) <- NULL
-# 
+#
 # # adicionando coluna tratamento
-# 
+#
 # treatment$treatment <- "certified"
-# 
+#
 # names(control)[1] <- "COD_IMOVEL"
-# 
+#
 # control$treatment <- "non certified"
-# 
+#
 # # selecionando colunas
-# 
+#
 # nomes <- c("COD_IMOVEL","areaRL_m","areaAPP_m","treatment","area_im")
-# 
+#
 # df <- rbind(treatment %>% select(nomes),control %>% select(nomes))
 # 
 # #################################
@@ -174,141 +173,95 @@ planilhas <- list.files(file.path(p,d),full.names = T)
 
 # removendo dados
 
-rm(df,df2,df3,df4m,bioma,biomas_rep,bizarrom,certificadas,control,mf,nas,Nas,slope,
-   slope_cer,slope_treat,slope2,treatment,bizarro,df4,zeros)
+#rm(df,df2,df3,df4m,bioma,biomas_rep,bizarrom,certificadas,control,mf,nas,Nas,slope,
+#   slope_cer,slope_treat,slope2,treatment,bizarro,df4,zeros)
+
+
 #### agregando dados temporais
 
 
 df <- read.csv("dados_n_temporais.csv")
 
-##################################
+head(df)
+
+##############################################
 #### desmatamento agregado 
-##################################
+##############################################
 
 # abrindo dados de desmatamento
 
-f <- function(x)read.csv(x,row.names = 1)
+# pasta com as planilhas longitudinais
 
-desm <- lapply(planilhas[1:3],f)
-
-names(desm[[1]])
-names(desm[[2]])
-
-desm_cert <- rbind(desm[[1]][,c(3,5,6,7,8,9,10,11)],desm[[2]][c(2,4,5,6,7,8,9,10)])
-
-desm_cert$treatment <- "certified" # corrigindo categoria
-
-desm_ncert <- desm[[3]][,c(3,5,6,7,8,9,10,11)]
-
-summary(as.factor(desm_ncert$treatment))
-
-desm_df <- rbind(desm_cert,desm_ncert)
-
-length(unique(desm_df$COD_IMOVEL[desm_df$treatment=="certified"])) 
+d <- "certification_Baci"
 
 
-#subset intervalo (2004-2009)
-
-desm_s <- subset(desm_df,subset = year<=2009&year>=2004)
+desm <- read.csv(file.path(p,d,"vegetation_deforestation.csv"))
 
 # somando taxa desmatamento
 
-desm_acc <- desm_s %>% 
+desm_acc <- desm %>%
+  filter( year<=2009&year>=2004)%>%
   group_by(COD_IMOVEL)%>%
-  summarise(desm_ac=sum(def_rate_1))
+  summarise(desm_ac=sum(desm_rate_ly))
 
 
-length(unique(df$COD_IMOVEL[df$treatment=="certified"]))
 
-df2 <- left_join(desm_acc,df) # gera NAS! pq?
+df2 <- left_join(df,desm_acc) # gera NAS! pq?
 
-
-nas <- df2[is.na(df2$area_im),] # 322 q nao batem!
-
-faltantes <- nas[nas$COD_IMOVEL %in% df$COD_IMOVEL,] # nenhuma dessas esta no df!
-
-# sao propriedades q estao no desmatamento acumulado mas nao no df!
-
-df3 <- df2[!is.na(df2$area_im),] # isso elimina NAs
-
-length(df3$COD_IMOVEL[df3$treatment=="certified"]) # 537, ok!
+length(df2$COD_IMOVEL[df2$treatment=="certified"]) # 537, ok!
 
 
-rm(desm,desm_acc,desm_cert,desm_cert_acc,desm_cert_s,desm_df,desm_df,desm_ncert,
+rm(desm_acc,desm_cert,desm_cert_acc,desm_cert_s,desm_df,desm_df,desm_ncert,
    desm_s,dup,faltantes,nas,treatment)
 
-##################################
+#############################################################
 #### regeneracao agregada 
-##################################
-reg <- lapply(planilhas[15:17],f)
+############################################################
 
-nomes <- names(reg[[1]])[c(2,4,5,6,7)]
-
-reg_cert <- rbind(reg[[1]]%>% select(nomes),reg[[2]]%>% select(nomes))
-
-reg_df <- rbind(reg_cert,reg[[3]]%>% select(nomes))
-
-#subset intervalo (2004-2009)
+reg <- read.csv(file.path(p,d,"regeneration.csv"))
 
 reg_s <- subset(reg_df,subset = year<=2009&year>=2004)
 
 # somando taxa desmatamento
 
-reg_acc <- reg_s %>% 
+reg_acc <- reg %>% 
+  filter(year<=2009&year>=2004)%>%
   group_by(COD_IMOVEL)%>%
-  summarise(reg_ac=sum(prop_reg))
+  summarise(reg_ac=sum(reg_rate))
 
-df4 <- left_join(df3,reg_acc) # 16 NAs em reg_ac
+df3 <- left_join(df2,reg_acc) 
 
-summary(df4)
-summary(reg_acc$reg_ac)
-length(unique(df4$COD_IMOVEL[df4$treatment=="certified"])) #OK
-
-
-df4 <- df4[!is.na(df4$reg_ac),]
-
-length(unique(df4$COD_IMOVEL)) # OK
+length(unique(df3$COD_IMOVEL[df3$treatment=="certified"])) #OK
 
 #################################
 #### proporcao vegetacao nativa
 ##################################
 
-# com os dados de desmatamento, da pra pegar prop veg
+fc <- read.csv(file.path(p,d,"forest_cover_proportion.csv"))
 
-prop_veg_2009 <- desm_s[desm_s$year==2009,]
+fc_2009 <- fc %>%
+  filter( year==2009)
 
-length(unique(prop_veg_2009$COD_IMOVEL))
+df4 <- left_join(df3,fc_2009[,c(1,6)]) 
 
-str(prop_veg_2009$COD_IMOVEL)
-str(df4$COD_IMOVEL)
-
-summary(prop_veg_2009)
-
-df5 <- left_join(df4,prop_veg_2009[,c(1,5)],by="COD_IMOVEL") 
-
-names(df5)[15] <- "prop_veg_09"
+names(df4)[15] <- "prop_veg_09"
 
 #################################
 #### proporcao pastagem
 ##################################
 
-past1 <- read.csv(planilhas[9])
-past2 <- read.csv(planilhas[10])
-past2$prop_past <- (past2$past_ha/2)/past2$area_im
-past3 <- read.csv(planilhas[11])
-nomes <- names(past1)[c(2,5,6,7)]
-names(past2)
-past_cert <- rbind(past1%>%select(nomes),past2%>%select(nomes))
-past_df <- rbind(past_cert,past3%>%select(nomes))
+past <- read.csv(file.path(p,d,"pasture_cover_proportion.csv"))
 
-#subset 2009
 
-past_s <- subset(past_df,subset = year==2009)
+pasture_2009 <- past %>%
+  filter( year==2009)
 
-df6 <- left_join(df5,past_s[,c(1,4)],by="COD_IMOVEL") 
+df5 <- left_join(df4,pasture_2009[,c(1,6)]) 
 
-summary(df6)
+names(df5)[16] <- "prop_past_09"
 
-names(df6)[16] <- "prop_past_09"
+write.csv(df5,"data_for_matching.csv",row.names = F)
 
-write.csv(df6,"data_for_matching.csv",row.names = F)
+
+
+
