@@ -1,7 +1,7 @@
 ---
 title: "matching"
 author: "Francisco d'Albertas"
-date: "19/10/2021"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
@@ -25,6 +25,14 @@ library(scales)
 ```
 
 
+## Modificacoes discutidas
+
+- usar classe de pastagem como: 0-0.25 ou 0.3; 0.25-1
+- desconsiderar propriedades pequenas da razao vegetacao
+- usar proporcao RL como variavel categorica
+  - fazer intervalo de 0.18-0.22 e avaliar distribuicao
+- usar ratio grande pra controle, bem mais que 1.
+
 ## Pareando as propriedades certificadas e nao certificadas
 
 ```{r include=FALSE}
@@ -35,38 +43,23 @@ p <- dirname(getwd())
 
 ```
 
-
-Data dos contratos de certificação:
-
-```{r echo=FALSE}
-
-# caminho dos shapes (tb vale criar um link no drive depois!)
-
-p_cert <- file.path(p,"dados_Imaflora_RA_clean")
-
-# esses dados nao contem as propriedades adicionais da cooxupe! o n real é de
-# 537 propriedades, mas o inicio da certificação é o mesmo
-certificadas <- read.csv(file.path(p_cert,"propriedades_certificadas.csv"),
-                         row.names = 1)
-
-summary(as.Date(certificadas$Date.Issued))
-rm(certificadas)
-
-```
+### Variaveis do modelo
 
 A data mais antiga é 2009, logo consideramos os 5 anos anteriores para o matching.
-
-Variáveis do pareamento:
 
 - desmatamento acumulado entre 2004 e 2009;
 - presença de RL;
 - bioma;
-- regeneração acumulada (ainda nao decidimos);
+- regeneração acumulada entre 2004 e 2009;
 - área da propriedade;
 - declividade média;
-- proporção de pastagem;
-- proporção de vegetação nativa;
+- proporção de pastagem 2009;
+- proporção de vegetação nativa 2009;
 
+
+***OBS: *** 
+
+- os dados de cobertura de floresta e pastagem sao da colecao 5.
 
 Distribuicao de propriedades certificadas entre MA e CE:
 
@@ -92,11 +85,6 @@ df$area_ct[df$area_im_mf>15] <- "l"
 
 df$area_ct <- as.factor(df$area_ct)
 
-# corrigindo limite prop veg
-
-df$prop_veg_09[df$prop_veg_09>1] <- 1
-
-
 ```
 
 
@@ -111,9 +99,11 @@ summary(df$area_ct)
 
 Distribuição da proporcao de pastagens de forma categorica:
 
+- Aqui usar 2 classes (0-0.25;0.25-1)
+
 ```{r echo=FALSE}
 
-df$prop_past_09_ct <- cut(df$prop_past_09,breaks = c(-0.1,0.5,1.1)  )
+df$prop_past_09_ct <- cut(df$prop_past_09,breaks = c(-0.1,0.25,1.1)  )
 
 summary(df$prop_past_09_ct)
 
@@ -175,22 +165,11 @@ Após testar diferentes formulas, verificamos que o modelo 6 apresenta o melhor 
 df_ma <- subset(data.rand1,subset = biome=="MATA ATLÂNTICA")
 df_ce <- subset(data.rand1,subset = biome=="CERRADO")
 
-# criando variavel APP como categorica tb
-
-df_ce$propAPP_ct <- as.factor (cut(df_ce$propAPP,breaks = 2))
-
-summary(df_ce$propAPP_ct)
-
-# criando prop veg cat
-
-df_ce$prop_veg_09_ct <- cut(df_ce$prop_veg_09,breaks = c(-0.1,0.2,1.1)  )
-
-
-# criando past cat
-
-df_ce$prop_past_09_ct <- cut(df_ce$prop_veg_09,breaks = c(-0.1,0.5,1.1)  )
-
-df_ma$prop_past_09_ct <- cut(df_ma$prop_veg_09,breaks = c(-0.1,0.5,1.1)  )
+# # criando past cat
+# 
+# df_ce$prop_past_09_ct <- cut(df_ce$prop_veg_09,breaks = c(-0.1,0.25,1.1)  )
+# 
+# df_ma$prop_past_09_ct <- cut(df_ma$prop_veg_09,breaks = c(-0.1,0.25,1.1)  )
 
 ```
 
@@ -235,7 +214,7 @@ ggbarplot(rl,fill = "LR bin",y="prop",x = "Var2")+facet_grid("Var3")
 
 ```{r}
 
-nn_ma <-matchit(formula6, data=df_ma, method="nearest", ratio=4, caliper = 0.25,replace = T)
+nn_ma <-matchit(formula6, data=df_ma, method="nearest", ratio=5, caliper = 0.25,replace = T)
  
 summary(nn_ma, standardize = TRUE)
 
@@ -246,7 +225,7 @@ summary(nn_ma, standardize = TRUE)
 
 ```{r echo=FALSE}
 
-nn_ce <-matchit(formula6, data=df_ce, method="nearest", ratio=4, caliper = 0.25,replace = T)
+nn_ce <-matchit(formula6, data=df_ce, method="nearest", ratio=5, caliper = 0.25,replace = T)
  
 summary(nn_ce, standardize = TRUE)
 
@@ -291,17 +270,25 @@ plot(summary(nn_ce,standardize = TRUE),xlim=c(0,1))
 #### Gerando os dados pareados
 ###################################################
 
+# cerrado
 
 control_ce<-match.data(nn_ce, group="control")
-(treated_ce<-match.data(nn_ce, group="treat"))
-(sort(treated.ce[ ,1]))
-dim(treated.ce)
-(control.nn_ce_id<-control_nn_ce[ ,1])
-(sort(control.nn_ce_id))
-(nn_ce$match.matrix)
+
+treated_ce<-match.data(nn_ce, group="treat")
+
 
 write.csv(control_ce,"control_ce.csv",row.names = F)
 write.csv(treated_ce,"treatment_ce.csv",row.names = F)
+
+# mata atlantica
+
+control_ma<-match.data(nn_ma, group="control")
+
+treated_ma<-match.data(nn_ma, group="treat")
+
+
+write.csv(control_ma,"control_ma.csv",row.names = F)
+write.csv(treated_ma,"treatment_ma.csv",row.names = F)
 
 
 ```
