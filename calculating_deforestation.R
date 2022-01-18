@@ -13,15 +13,6 @@ library(ggpubr)
 
 #===============================================================================
 
-# obs
-
-# parece que o dado de cobertura vegetacao ta errado. mas o de desmatamento
-# ta certo!
-
-# tem q ser algum erro
-
-# pasta raiz
-
 p <- dirname(getwd())
 
 #-------------------------------------------------------------------------------
@@ -356,3 +347,4 @@ df2%>% filter(desm_rate_ly <1.2)%>%
   ggdensity(x ="desm_rate_ly" ,col="treatment" )
 
 write.csv(df2,"vegetation_deforestation.csv",row.names = F)
+
