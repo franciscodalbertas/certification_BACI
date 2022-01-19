@@ -22,80 +22,63 @@ ma <- ma%>% select(c)
 
 p <- dirname(getwd()) # parental folder
 
-path_full_data <- "metricas\\melted_tables" # path to access metrics calculated 
-# for all properties
 
-l <- list.files(file.path(p,path_full_data),full.names = T) #listing all the files
-
-f <- function(x)read.csv(x,row.names = 1)
+path_full_data <- "certification_BACI" # path to access metrics calculated 
 
 #---- deforestation ------------------------------------------------------------
 
-def <- lapply(l[1:3],f) # data on deforestation
+def <- read.csv(file.path(p,path_full_data,"vegetation_deforestation.csv"))
+
+#def <- lapply(l[33],f) # data on deforestation
 
 ## columns to keep from the metrics
 
-nm <- c("COD_IMOVEL","year","def_rate_1")
-
-f2 <- function(x) x%>% select(nm)
-
-def2 <- lapply(def,f2)
-
-def_df <- do.call(rbind,def2)
+nm <- c("COD_IMOVEL","year","desm_rate_ly")
 
 all_properties <- unique(c(ce$COD_IMOVEL,ma$COD_IMOVEL))
 
 ## subset deforestation for selected properties
-def_df_s <-def_df[def_df$COD_IMOVEL %in% all_properties,]
 
+def_s <- def %>% filter(COD_IMOVEL %in% all_properties)
+  
 rm(def,def_df,def2)
+
 #---- regeneration -------------------------------------------------------------
 
-reg <- lapply(l[15:17],f) # data on deforestation
+reg <- read.csv(file.path(p,path_full_data,"regeneration.csv"))
 
 ## columns to keep from the metrics
 
 nm <- c("COD_IMOVEL","year","prop_reg")
 
-f2 <- function(x) x%>% select(nm)
-
-reg2 <- lapply(reg,f2)
-
-reg_df <- do.call(rbind,reg2)
-
-all_properties <- unique(c(ce$COD_IMOVEL,ma$COD_IMOVEL))
-
 ## subset reg for selected properties
-reg_df_s <-reg_df[reg_df$COD_IMOVEL %in% all_properties,]
 
-rm(reg,reg_df,reg2)
+reg_s <-reg %>% filter(COD_IMOVEL %in% all_properties)
+
+rm(reg)
 
 #---- prop cover ---------------------------------------------------------------
 
-pveg <- lapply(l[12:14],f) # data on deforestation
+pveg <- read.csv(file.path(p,path_full_data,"forest_cover_proportion.csv"))
 
 ## columns to keep from the metrics
 
 nm <- c("COD_IMOVEL","year","prop_cover")
 
-f2 <- function(x) x%>% select(nm)
-
-pveg2 <- lapply(pveg,f2)
-
-pveg_df <- do.call(rbind,pveg2)
-
-all_properties <- unique(c(ce$COD_IMOVEL,ma$COD_IMOVEL))
-
 ## subset pveg for selected properties
-pveg_df_s <-pveg_df[pveg_df$COD_IMOVEL %in% all_properties,]
 
-rm(pveg,pveg_df,pveg2)
+
+pveg_s <-pveg %>% 
+  filter(COD_IMOVEL %in% all_properties)%>%
+  filter(year>=1988&year<=2017) # keep same years from the other data
+
+rm(pveg)
 
 # merging into one data frame
 
-temp_data <- cbind(def_df_s,reg_df_s[,3],pveg_df_s[,3])
+temp_data <- cbind(def_s[,c(1:3,5:7,13)],reg_s[,8],pveg_s[,6])
 
-names(temp_data)[4:5] <- c("reg_rate","p_veg")
+names(temp_data)[8:9] <- c("reg_rate","p_veg")
 
 # exporting data
 
@@ -109,6 +92,7 @@ ma_2 <- left_join(ma,temp_data)
 ma_2$biome <- "Atlantic Forest"
 ce_2 <- left_join(ce,temp_data)
 ce_2$biome <- "Cerrado"
+
 df_full <- rbind(ma_2,ce_2)
 
 
@@ -116,20 +100,31 @@ summary(df_full)
 
 #==== agregando data da certificacao nos dados certificados ====================
 
-
-#### OBS #######################################################################
-# eu nao entendo como usar o controle uma vez q mesmo calculando anos antes e
-# depois, cada contrato se refere a um conjunto diferente de anos
-
-# tem q ter um df pra cada contrato, pelo jeito.
-
-################################################################################
-
 # dados certificacao
 
 ra <- read.csv(file.path(p,"dados_Imaflora_RA_clean","propriedades_certificadas.csv"))
 
 df_full_s <- df_full[df_full$COD_IMOVEL %in% ra$COD_IMOVEL,]
+
+length(unique(df_full$COD_IMOVEL[df_full$treatment=="certified"])) #531!!
+length(unique(df_full_s$COD_IMOVEL)) # so tem 525!!
+length(unique(ra$COD_IMOVEL)) # 531 
+
+################################################################################
+
+car_ra <- ra$COD_IMOVEL
+
+car_df <- unique(df_full$COD_IMOVEL[df_full$treatment=="certified"])
+
+diff <- car_ra[!car_ra %in% car_df] 
+
+# pq tem 6 q nao tao??? alias, tinha q ter 537 no df full nao 531! algum erro previo
+# pode ser as q nao pareou, pq efetivamente tiveram 6 q nao parearam!                                 
+
+
+################################################################################
+
+
 df_full_s2 <- left_join(df_full_s,ra)
 
 # falta atribuir dados pros car novos da cooxupe
@@ -155,18 +150,24 @@ ra_cooxupe_faltante <- ra_cooxupe_faltante[1:180,]
 
 car_cooxupe <- cbind(car_cooxupe,ra_cooxupe_faltante)
 
+
+car_cooxupe_f <- car_cooxupe %>% select(names(df_full_s2))
+
 # gerando df completo
 
-df_full_s3 <- rbind(df_full_s2,car_cooxupe)
+df_full_s3 <- rbind(df_full_s2,car_cooxupe_f)
 
 summary(df_full_s3)
 
+
+df_full_s3 <- df_full_s3[,-13]
+
 # falta inserir nao certificados
 
-selecionar <- names(df_full_s3)[c(1:9,11:12,16:19,21:24,29:32)]
+#selecionar <- names(df_full_s3)[c(1:9,11:12,16:19,21:24,29:32)]
 
 
-df_full_s3 <- df_full_s3%>% select(selecionar)
+#df_full_s3 <- df_full_s3%>% select(selecionar)
 
 
 # colocar colunas extras no controle como NA
@@ -177,29 +178,49 @@ df_full_s_control <- df_full[df_full$treatment=="non certified",]
 
 names(df_full_s_control); names(df_full_s3)
 
+nomes_faltantes <-names(df_full_s3) [ ! names(df_full_s3)%in% names(df_full_s_control)]
 
 
-m <- matrix(NA, ncol = length(names(df_full_s3)[c(11,16:23)]), nrow = nrow(df_full_s_control))
+m <- matrix(NA, ncol = length(nomes_faltantes), nrow = nrow(df_full_s_control))
 
 
 aditional_var <- as.data.frame(m)
 
-names(aditional_var) <- names(df_full_s3)[c(11,16:23)]
+names(aditional_var) <- nomes_faltantes
 
 
 df_full_s_control <- cbind(df_full_s_control,aditional_var)
 
+# selecionae2 <- names(df_full_s_control)
+# 
+# df_full_s4 <- df_full_s3 %>% select(selecionae2)
 
-selecionae2 <- names(df_full_s_control)
 
-df_full_s4 <- df_full_s3 %>% select(selecionae2)
+names(df_full_s_control)
+names(df_full_s3)
 
 
-final_df <- rbind(df_full_s4,df_full_s_control)
+final_df <- rbind(df_full_s3,df_full_s_control)
 
-# salvando
+summary(final_df)
 
-write.csv(final_df,"data_for_panel_regression.csv",row.names = F)
+# APP e RL com varios NAs!! pode ter so faltado converter pra 0
+
+
+summary(df_full_s3) #OK, sem NAs 
+summary(df_full_s_control) # ta sem esse dado!!!mas seria bacana ter, pelo
+                           # menos proporcao de APP?? discutir isso depois!
+
+# por enquanto excluir esses dados
+
+
+keep <- names(final_df)[c(1:16,23,30,31)]
+
+final_df2 <- final_df %>% select(keep)
+
+summary(final_df2)
+
+write.csv(final_df2,"data_for_panel_regression.csv",row.names = F)
 
 
 #==== criando coluna de antes e depois =========================================
@@ -209,22 +230,21 @@ write.csv(final_df,"data_for_panel_regression.csv",row.names = F)
 
 str(final_df)
 
-final_df$Date.Issued <- as.Date(final_df$Date.Issued)
+final_df2$Date.Issued <- as.Date(final_df2$Date.Issued)
 
-?as.Date
 
-format(as.Date(final_df$Date.Issued),"%Y")
+format(as.Date(final_df2$Date.Issued),"%Y")
 
 # antes =0; depois =1
 
 
-final_df$certification_cat[final_df$treatment=="certified"&
-                             format(final_df$Date.Issued,"%Y")<=final_df$year] <- 
+final_df2$certification_cat[final_df2$treatment=="certified"&
+                             format(final_df2$Date.Issued,"%Y")<=final_df2$year] <- 
   1
 
 
-final_df$certification_cat[final_df$treatment=="certified"&
-                             format(final_df$Date.Issued,"%Y")>final_df$year] <- 
+final_df2$certification_cat[final_df2$treatment=="certified"&
+                             format(final_df2$Date.Issued,"%Y")>final_df2$year] <- 
   0
 
 
@@ -247,7 +267,7 @@ final_df$certification_cat[final_df$treatment=="certified"&
 
 ################################################################################
 
-final_df$certification_cat[final_df$treatment=="non certified"] <- 
+final_df2$certification_cat[final_df2$treatment=="non certified"] <- 
   0
 
 #==== calculando tempo do evento ===============================================
@@ -259,29 +279,30 @@ final_df$certification_cat[final_df$treatment=="non certified"] <-
 
 # valor zero controle
 
-final_df$event_time[final_df$treatment=="non certified"] <- 0
+final_df2$event_time[final_df2$treatment=="non certified"] <- 0
 
 
 # ano referencia tratamento
-final_df$event_time[final_df$treatment=="certified"&
-                      format(final_df$Date.Issued,"%Y")==final_df$year] <- 0
+final_df2$event_time[final_df2$treatment=="certified"&
+                      format(final_df2$Date.Issued,"%Y")==final_df2$year] <- 0
 
 
 # ano referencia tratamento
-final_df$event_time[final_df$treatment=="certified"&
-                      format(final_df$Date.Issued,"%Y")==final_df$year] <- 0
+final_df2$event_time[final_df2$treatment=="certified"&
+                      format(final_df2$Date.Issued,"%Y")==final_df2$year] <- 0
 
 
-final_df$event_time[final_df$treatment=="certified"&
-                      format(final_df$Date.Issued,"%Y")!=final_df$year] <- 
-  final_df$year[final_df$treatment=="certified"&
-                  format(final_df$Date.Issued,"%Y")!=final_df$year]-
-  as.integer(format(final_df$Date.Issued,"%Y"))[final_df$treatment=="certified"&
-                              format(final_df$Date.Issued,"%Y")!=final_df$year]
+final_df2$event_time[final_df2$treatment=="certified"&
+                      format(final_df2$Date.Issued,"%Y")!=final_df2$year] <- 
+  final_df2$year[final_df2$treatment=="certified"&
+                  format(final_df2$Date.Issued,"%Y")!=final_df2$year]-
+  as.integer(format(final_df2$Date.Issued,"%Y"))[final_df2$treatment=="certified"&
+                              format(final_df2$Date.Issued,"%Y")!=final_df2$year]
 
 
 
-summary(final_df$event_time)
-hist(final_df$event_time)
+summary(final_df2$event_time)
+
+hist(final_df2$event_time)
 
 write.csv(final_df,"data_for_panel_regression.csv",row.names = F)
