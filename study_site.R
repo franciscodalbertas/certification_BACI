@@ -113,6 +113,7 @@ mun_crop <- st_crop(x = mun,box2)
  
 # tentando enfiar outra legenda! pro bioma! ainda nao deu!
 # falta so arrumar nome
+
 library(ggnewscale)
 
 municipios_certificados <- ggplot() +
@@ -176,11 +177,14 @@ p1 <- grupos %>%
   theme_bw() +
   xlab("")+
   ylab("number of farms involved")+
-  theme_minimal()+
+  theme_pubr()+
   theme(axis.title.y=element_blank(),
+        axis.line.y=element_blank(),
         axis.text.y=element_blank(),
         axis.ticks.y=element_blank(),panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())+
+  scale_y_continuous(limits = c(0, 199), breaks = c(0, 50, 100,150))
+
 
 # plotar os mesmos com as linhas do tempo!!!
 
@@ -200,13 +204,18 @@ periodo <- left_join(periodo,grupos, by="cert")
 periodo$label <- as.factor(as.numeric(as.factor(periodo$cert)))
 #---- plotando o grafico -----------------------------------------------------
 
+lims <- as.Date(c("2009-01-01","2020-12-12"))
+
+
+
 duracao <- periodo %>% 
   arrange(Freq) %>%
   mutate(label=factor(label, levels=label))%>% 
   ggplot() +
   geom_segment(data = periodo, aes(x = In, y = cert, xend = as.Date('2019-12-31'),
                                    yend = cert), size = 2)+
-  scale_x_date( breaks=date_breaks("1 year"),labels = date_format("%y")) + 
+  scale_x_date(limits =lims,labels = date_format("%y"),
+        date_breaks = "3 year") + 
   xlab('period under certification')+
   theme_pubr()+
   theme(axis.line.y=element_blank(),
@@ -214,12 +223,14 @@ duracao <- periodo %>%
         axis.title.y=element_blank(),legend.title = element_blank())+
   theme(legend.position="right")
 
+str(periodo)
+
 library(egg)
 
-figuras <- ggarrange(p1,duracao,ncol=2)
+figuras <- ggarrange(p1,duracao,ncol=2,labels = c("b","c"))
 
 
-final2 <- final/figuras
+#final2 <- final/figuras
 
 
 detach("package:egg", unload=TRUE)
@@ -227,13 +238,20 @@ detach("package:egg", unload=TRUE)
 ggarrange(final,figuras,heights = c(4,1))
 
 
-ggsave(filename = "figures/study_site.jpg",plot = final2,width = 14,height = 15,
-       units = "cm",scale = 1.5)
+# ggsave(filename = "figures/study_site.jpg",plot = final2,width = 14,height = 15,
+#        units = "cm",scale = 1.5)
 
 library(egg)
 
-p1+duracao+final
-opcao2 <- final+p1+duracao
+#p1+duracao+final
 
-ggsave(filename = "figures/study_site2.jpg",plot = opcao2,width = 25,height = 14,
-       units = "cm",scale = 1)
+#opcao2 <- final+p1+duracao
+
+
+#opcao2 <- final+figuras
+
+opcao2 <- ggarrange(final,figuras,labels = c("a","",""))
+
+
+ggsave(filename = "figures/study_site2.jpg",plot = opcao2,width = 25,height =15,
+       units = "cm")
