@@ -3,6 +3,7 @@ title: "matching"
 author: "Francisco d'Albertas"
 date: "`r Sys.Date()`"
 output: html_document
+self_contained: true option
 ---
 
 ```{r setup, include=FALSE}
