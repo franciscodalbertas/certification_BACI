@@ -223,13 +223,5 @@ apps_f_d2$area <- as.numeric(st_area(apps_f_d2))
 st_geometry(apps_f_d2) <- NULL
 
 
-# tem 3 porra de imovel repetido!!
-
-# parece q nao rolou um merge decente. o lance eh refazer tudo pra converir
-
-# se tiver tudo certo, deveriam ter :
-
-
-
 st_write(apps_f,file.path(p,"limites_propriedades","APPS.shp"),append = F)
 
