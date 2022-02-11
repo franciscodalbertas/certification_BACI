@@ -28,8 +28,6 @@ Br <- read_country()
 Biomes <- read_biomes(year = 2019, simplified = TRUE, showProgress = TRUE)%>%
   filter(code_biome==3|code_biome==4)
 
-str(Biomes$name_biome)
-
 Biomes$name_biome[Biomes$name_biome=="Mata Atlântica"] <- "Atlantic forest"
 
 
@@ -43,7 +41,7 @@ box2 <- st_sfc(box,crs =st_crs(Br) )
 
 Limites_BR <- ggplot()+
   geom_sf(data = Br,color=NA)+
-  geom_sf(data=Biomes,fill=c("gray","darkgray"))+
+  geom_sf(data=Biomes,fill=c("grey33","grey"))+
   geom_sf(data = box2,fill = NA, color = "black", size = 1.2)+
   theme_void()+theme(plot.background = element_rect(fill = "white"))
 # municipios
@@ -120,7 +118,7 @@ municipios_certificados <- ggplot() +
   geom_sf(data = Br,color=NA)+
   #geom_sf(data=mun_crop,fill="NA",color="white")+
   geom_sf(data=Biomes,aes(fill=name_biome),show.legend=T)+
-  scale_fill_manual(values=c("gray","darkgray"))+
+  scale_fill_manual(values=c("grey","grey33"))+
   labs(fill="")+
   new_scale_fill()+
   geom_sf(data=mun2,aes(fill=Freq),color="white") +
@@ -216,14 +214,12 @@ duracao <- periodo %>%
                                    yend = cert), size = 2)+
   scale_x_date(limits =lims,labels = date_format("%y"),
         date_breaks = "3 year") + 
-  xlab('period under certification')+
+  xlab('date (year)')+
   theme_pubr()+
   theme(axis.line.y=element_blank(),
         axis.text.y=element_blank(),axis.ticks=element_blank(),
         axis.title.y=element_blank(),legend.title = element_blank())+
   theme(legend.position="right")
-
-str(periodo)
 
 library(egg)
 
