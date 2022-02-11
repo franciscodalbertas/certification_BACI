@@ -28,66 +28,70 @@ dma <- dcert[dcert$biome=="Atlantic Forest",]
 
 dce <- dcert[dcert$biome=="Cerrado",]
 
-# desmatamento
+# data em q maior parte propriedades foi certificada
 
-desm_ma <- dma%>% filter(year>2003&year<=2017)%>%
-  ggerrorplot(x = "year",y="desm_rate_ly",col="treatment", ylim = c(0, 0.1))+
-  ylab("deforestation rate")
+summary(as.Date(dma$Date.Issued))
 
 
-desm_ce <- dce%>% filter(year>2003&year<=2017)%>%
-  ggerrorplot(x = "year",y="desm_rate_ly",col="treatment", ylim = c(0, 0.1))+
-  ylab("deforestation rate")
-
-# regeneracao
-
-reg_ma <- dma%>% filter(year>2003&year<=2017)%>%
-  ggerrorplot(x = "year",y="reg_rate",col="treatment", ylim = c(0, 0.1))+
-  ylab("regeneration rate")
-
-
-reg_ce <- dce%>% filter(year>2003&year<=2017)%>%
-  ggerrorplot(x = "year",y="reg_rate",col="treatment", ylim = c(0, 0.1))+
-  ylab("regeneration rate")
-
-# p_veg
-
-pveg_ma <- dma%>% filter(year>2003&year<=2017)%>%
-  ggerrorplot(x = "year",y="p_veg",col="treatment", ylim = c(0, 0.5))+
-  ylab("vegetation cover ratio")
-
-
-pveg_ce <- dce%>% filter(year>2003&year<=2017)%>%
-  ggerrorplot(x = "year",y="p_veg",col="treatment", ylim = c(0, 0.5))+
-  ylab("vegetation cover proportion")
-
-
+# # desmatamento
+# 
+# desm_ma <- dma%>% filter(year>2003&year<=2017)%>%
+#   ggerrorplot(x = "year",y="desm_rate_ly",col="treatment", ylim = c(0, 0.1))+
+#   ylab("deforestation rate")
+# 
+# 
+# desm_ce <- dce%>% filter(year>2003&year<=2017)%>%
+#   ggerrorplot(x = "year",y="desm_rate_ly",col="treatment", ylim = c(0, 0.1))+
+#   ylab("deforestation rate")
+# 
+# # regeneracao
+# 
+# reg_ma <- dma%>% filter(year>2003&year<=2017)%>%
+#   ggerrorplot(x = "year",y="reg_rate",col="treatment", ylim = c(0, 0.1))+
+#   ylab("regeneration rate")
+# 
+# 
+# reg_ce <- dce%>% filter(year>2003&year<=2017)%>%
+#   ggerrorplot(x = "year",y="reg_rate",col="treatment", ylim = c(0, 0.1))+
+#   ylab("regeneration rate")
+# 
+# # p_veg
+# 
+# pveg_ma <- dma%>% filter(year>2003&year<=2017)%>%
+#   ggerrorplot(x = "year",y="p_veg",col="treatment", ylim = c(0, 0.5))+
+#   ylab("vegetation cover ratio")
+# 
+# 
+# pveg_ce <- dce%>% filter(year>2003&year<=2017)%>%
+#   ggerrorplot(x = "year",y="p_veg",col="treatment", ylim = c(0, 0.5))+
+#   ylab("vegetation cover proportion")
+# 
+# 
 # pAPP veg!
-
+ 
 apps <- read.csv("app_forest_cover.csv")
 
-apps_ma <- apps %>% 
-  filter(COD_IMOVEL %in% dma$COD_IMOVEL)
+ apps_ma <- apps %>% 
+   filter(COD_IMOVEL %in% dma$COD_IMOVEL)
 
-
-dma<- left_join(dma,apps_ma)
-
-dma<- dma %>% 
-  mutate(papp = replace(value, is.na(value), 0))
-
-# cerrado
-
+ dma<- left_join(dma,apps_ma)
+# 
+ dma<- dma %>% 
+   mutate(papp = replace(value, is.na(value), 0))
+# 
+# # cerrado
+# 
 apps_ce<- apps %>% 
-  filter(COD_IMOVEL %in% dce$COD_IMOVEL)
-
-dce <- left_join(dce,apps_ce)
-
-dce <- dce %>% 
-  mutate(papp = replace(value, is.na(value), 0))
-
-
+   filter(COD_IMOVEL %in% dce$COD_IMOVEL)
+# 
+ dce <- left_join(dce,apps_ce)
+# 
+ dce <- dce %>% 
+   mutate(papp = replace(value, is.na(value), 0))
+# 
+# 
 #unindo dataframes
-
+ 
 df <- rbind(dma,dce)
 
 ################################################################################
@@ -114,11 +118,16 @@ g <-df%>% filter(year>2003&year<=2017)%>%
     legend.position = "none",
     axis.title = element_text(size = 16),
     axis.text.x = element_text(family = "Roboto Mono", size = 12),
-    panel.grid = element_blank()
-  )
-
-
-
+    panel.grid = element_blank()) +
+  scale_x_discrete()+
+  annotate(geom="rect",
+            xmin=6, 
+            xmax=9, 
+            ymin=0, 
+            ymax=0.5,
+            fill="red",
+            alpha=0.05,
+            color=NA)
 
 
 desm_points <- g +
@@ -158,8 +167,16 @@ g2 <- df%>% filter(year>2003&year<=2017)%>%
     legend.position = "none",
     axis.title = element_text(size = 16),
     axis.text.x = element_text(family = "Roboto Mono", size = 12),
-    panel.grid = element_blank()
-  )
+    panel.grid = element_blank())+
+  scale_x_discrete()+
+  annotate(geom="rect",
+           xmin=6, 
+           xmax=9, 
+           ymin=0, 
+           ymax=0.5,
+           fill="red",
+           alpha=0.05,
+           color=NA)
 
 reg_points <- g2 +
   geom_jitter(colour = "gray",size = 1, alpha = 0.1, width = 0.2) +
@@ -197,8 +214,16 @@ g3 <- df%>% filter(year>2003&year<=2017)%>%
     legend.position = "none",
     axis.title = element_text(size = 16),
     axis.text.x = element_text(family = "Roboto Mono", size = 12),
-    panel.grid = element_blank()
-  )
+    panel.grid = element_blank())+
+  scale_x_discrete()+
+  annotate(geom="rect",
+           xmin=6, 
+           xmax=9, 
+           ymin=0, 
+           ymax=0.95,
+           fill="red",
+           alpha=0.2,
+           color=NA)
 
 
 pveg_points <- g3 +
@@ -238,8 +263,16 @@ g4 <- df%>% filter(year>2003&year<=2017)%>%
     legend.position = "none",
     axis.title = element_text(size = 16),
     axis.text.x = element_text(family = "Roboto Mono", size = 12),
-    panel.grid = element_blank()
-  )
+    panel.grid = element_blank())+
+  scale_x_discrete()+
+  annotate(geom="rect",
+           xmin=6, 
+           xmax=9, 
+           ymin=0, 
+           ymax=0.95,
+           fill="red",
+           alpha=0.2,
+           color=NA)
 
 
 app_points <- g4 +
@@ -263,7 +296,11 @@ app_points <- ggpar(app_points,
 panel <- ggarrange(desm_points,reg_points,pveg_points,app_points,common.legend = T,
                    labels = "auto",ncol = 2,nrow = 2)
 
+# versao com faixa de adocao certificacao
 
 ggsave(filename = file.path("figures","descriptive_figure.jpeg"),plot = panel,width = 14,
+       height = 12,units = "cm")
+
+ggsave(filename = file.path("figures","descriptive_figure_comfaixa.jpeg"),plot = panel,width = 14,
        height = 12,units = "cm")
 
