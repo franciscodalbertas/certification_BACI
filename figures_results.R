@@ -53,8 +53,11 @@ dma <- dcert[dcert$biome=="Atlantic Forest",]
 dce <- dcert[dcert$biome=="Cerrado",]
 
 
-# titulo pra legenda da figura: average effect by lenght of exposure on 
-# deforestation(a)....
+# substituir pveg por pdeficit!
+
+
+
+
 
 #---- Desmatamento -------------------------------------------------------------
 
@@ -480,18 +483,194 @@ ce_app <- ggpar(m9g_ce,
                font.y=c(7,"bold"),
                font.tickslab=(5))
 
+
+
+
+
+#===============================================================================
+
+# avaliando vegetacao sem app (proxy pra RL)
+
+
+# nesse caso fazer area de deficit menos area de APP. Usar o df menor de medias
+# e grandes
+
+###############################################################################
+
+# !!!  a area de APP nao ta certa! precisaria corrigir isso. !!!!
+# pq tem proporcao app associada a area 0 de app.
+
+# pegar de novo area de app?
+
+library(sf)
+
+apps <- st_read(file.path("G:\\Meu Drive\\Doutorado\\cap3\\",
+                          "limites_propriedades","APPS.shp"))
+
+# ajeitando pra MA
+
+apps_ma <- apps %>% filter(COD_IMOVEL %in% dma2_app$COD_IMOVEL)
+
+sf::sf_use_s2(FALSE)
+
+apps_ma$APP_area_ha <- as.numeric(st_area(apps_ma)/10^4)
+
+st_geometry(apps_ma) <- NULL
+
+dma2_app_2 <- left_join(dma2_app,apps_ma)
+
+dma2_app_2$APP_area_ha[is.na(dma2_app_2$APP_area_ha)] <- 0
+
+# ajeitando pro CE
+
+apps_ce <- apps %>% filter(COD_IMOVEL %in% dce2_app$COD_IMOVEL)
+
+apps_ce$APP_area_ha <- as.numeric(st_area(apps_ce)/10^4)
+
+st_geometry(apps_ce) <- NULL
+
+dce2_app_2 <- left_join(dce2_app,apps_ce)
+
+dce2_app_2$APP_area_ha[is.na(dce2_app_2$APP_area_ha)] <- 0
+
+
+###############################################################################
+
+# MA
+
+# calculando deficit fora de APP
+
+dma2_app_2 <- dma2_app_2 %>% 
+  mutate(deficit_noAPP= (area_im* 0.2)- (area_im* p_veg)- (APP_area_ha)) %>%
+  mutate(deficit_noAPP = replace(deficit_noAPP, deficit_noAPP<0, 0)) %>%
+  mutate(deficit_noAPP_prop= deficit_noAPP/area_im)
+
+# cerrado
+
+
+# calculando deficit fora de APP
+
+dce2_app_2 <- dce2_app_2 %>% 
+  mutate(deficit_noAPP= (area_im* 0.2)- (area_im* p_veg)- (APP_area_ha)) %>%
+  mutate(deficit_noAPP = replace(deficit_noAPP, deficit_noAPP<0, 0)) %>%
+  mutate(deficit_noAPP_prop= deficit_noAPP/area_im)
+
+###############################################################################
+
+# Mata Atlantica
+
+################################################################################
+
+m14cs_ma <- att_gt(yname = "deficit_noAPP_prop",
+                   gname = "first_year",
+                   idname = "id",
+                   tname = "year",
+                   xformla = ~ 1,
+                   panel = TRUE,
+                   control_group = "notyettreated",
+                   data = dma2_app_2)
+
+ag_m14_ma <- aggte(m14cs_ma, type = "dynamic", min_e = -11, max_e = 8)
+
+#### tabela do modelo agregado ###############################################
+
+tabela_ma_def <- as.data.frame(capture.output(summary(ag_m14_ma)))
+
+tabela_ma_def_1 <- data.frame(tabela_ma_def[15:32,])
+
+names(tabela_ma_def_1) <- "output"
+
+write.csv(tabela_ma_def_1,"tables/def_ma_pd.csv",row.names = F)
+
+#### grafico do modelo agregado ###############################################
+
+m14g_ma <- ggdid(ag_m14_ma)+
+  geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
+  geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
+  theme_classic()
+
+
+ma_rl_l <- ggpar(m14g_ma,
+                  legend = "none",
+                  xlab = "time (years)",
+                  ylab = "vegetation deficit",
+                  main = "",
+                  font.x=c(7,"bold"),
+                  font.y=c(7,"bold"),
+                  font.tickslab=(5))
+
+################################################################################
+
+# Cerrado
+
+################################################################################
+
+m14cs_ce <- att_gt(yname = "deficit_noAPP_prop",
+                   gname = "first_year",
+                   idname = "id",
+                   tname = "year",
+                   xformla = ~ 1,
+                   panel = TRUE,
+                   control_group = "notyettreated",
+                   data = dce2_app_2)
+#(m3_group <- aggte(m3cs, type = "group"))
+
+ag_m14_ce <- aggte(m14cs_ce, type = "dynamic", min_e = -11, max_e = 8)
+
+#### tabela do modelo agregado ###############################################
+
+tabela_ce_def <- as.data.frame(capture.output(summary(ag_m14_ce)))
+
+tabela_ce_def_1 <- data.frame(tabela_ce_def[15:34,])
+
+names(tabela_ce_def_1) <- "output"
+
+write.csv(tabela_ce_def_1,"tables/def_ce_pd.csv",row.names = F)
+
+#### grafico do modelo agregado ###############################################
+
+m14g_ce <- ggdid(ag_m14_ce)+
+  geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
+  geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
+  theme_classic()
+
+ce_rl_l <- ggpar(m14g_ce,
+                  legend = "none",
+                  xlab = "time (years)",
+                  ylab = "vegetation deficit",
+                  main = "",
+                  font.x=c(7,"bold"),
+                  font.y=c(7,"bold"),
+                  font.tickslab=(5))
+
+
+# # salvar apenas analise deficit
+# 
+# library(egg)
+# 
+# detach("package:egg", unload=TRUE)
+# 
+# fig_deficitt <- ggarrange(ma_rl_l,ce_rl_l,ncol=2)
+# 
+# 
+# ggsave(filename = file.path("figures","veg_deficit_latency.jpeg"),
+#        plot = fig_deficitt,width = 14,height = 6,units = "cm")
+# 
+
 #---- figura em painel com todos os resultados! --------------------------------
 
-# acho que fica melhor separar em MA e CE
+# acho que fica melhor separar em MA e CE (substitui pelo deficit!)
 
-panel_ma <- ggarrange(ma_def,ma_reg,ma_pveg,ma_app,labels = "auto")
+panel_ma <- ggarrange(ma_def,ma_reg,ma_rl_l,ma_app,labels = "auto")
 
-panel_ce <- ggarrange(ce_def,ce_reg,ce_pveg,ce_app,labels = "auto")
+panel_ce <- ggarrange(ce_def,ce_reg,ce_rl_l,ce_app,labels = "auto")
 
-ggsave(filename = file.path("figures","panel_regression_results_ma.jpeg"),plot = panel_ma,width = 14,
+ggsave(filename = file.path("figures","panel_regression_results_ma_deficit.jpeg"),plot = panel_ma,width = 14,
        height = 12,units = "cm")
 
-ggsave(filename = file.path("figures","panel_regression_results_ce.jpeg"),plot = panel_ce,width = 14,
+ggsave(filename = file.path("figures","panel_regression_results_ce_deficit.jpeg"),plot = panel_ce,width = 14,
        height = 12,units = "cm")
 
 
+ggsave(filename = file.path("figures","panel_regression_results_ce_deficit.jpeg"),plot = panel_ce,width = 14,
+       height = 12,units = "cm")
