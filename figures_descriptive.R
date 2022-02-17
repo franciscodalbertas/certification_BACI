@@ -30,43 +30,11 @@ dce <- dcert[dcert$biome=="Cerrado",]
 
 # data em q maior parte propriedades foi certificada
 
-summary(as.Date(dma$Date.Issued))
+summary(as.Date(dma$Date.Issued)) # 2010-2013
+
+summary(as.Date(dce$Date.Issued)) # 2009-2011
 
 
-# # desmatamento
-# 
-# desm_ma <- dma%>% filter(year>2003&year<=2017)%>%
-#   ggerrorplot(x = "year",y="desm_rate_ly",col="treatment", ylim = c(0, 0.1))+
-#   ylab("deforestation rate")
-# 
-# 
-# desm_ce <- dce%>% filter(year>2003&year<=2017)%>%
-#   ggerrorplot(x = "year",y="desm_rate_ly",col="treatment", ylim = c(0, 0.1))+
-#   ylab("deforestation rate")
-# 
-# # regeneracao
-# 
-# reg_ma <- dma%>% filter(year>2003&year<=2017)%>%
-#   ggerrorplot(x = "year",y="reg_rate",col="treatment", ylim = c(0, 0.1))+
-#   ylab("regeneration rate")
-# 
-# 
-# reg_ce <- dce%>% filter(year>2003&year<=2017)%>%
-#   ggerrorplot(x = "year",y="reg_rate",col="treatment", ylim = c(0, 0.1))+
-#   ylab("regeneration rate")
-# 
-# # p_veg
-# 
-# pveg_ma <- dma%>% filter(year>2003&year<=2017)%>%
-#   ggerrorplot(x = "year",y="p_veg",col="treatment", ylim = c(0, 0.5))+
-#   ylab("vegetation cover ratio")
-# 
-# 
-# pveg_ce <- dce%>% filter(year>2003&year<=2017)%>%
-#   ggerrorplot(x = "year",y="p_veg",col="treatment", ylim = c(0, 0.5))+
-#   ylab("vegetation cover proportion")
-# 
-# 
 # pAPP veg!
  
 apps <- read.csv("app_forest_cover.csv")
@@ -75,21 +43,21 @@ apps <- read.csv("app_forest_cover.csv")
    filter(COD_IMOVEL %in% dma$COD_IMOVEL)
 
  dma<- left_join(dma,apps_ma)
-# 
+ 
  dma<- dma %>% 
    mutate(papp = replace(value, is.na(value), 0))
-# 
-# # cerrado
-# 
+ 
+# cerrado
+ 
 apps_ce<- apps %>% 
    filter(COD_IMOVEL %in% dce$COD_IMOVEL)
-# 
- dce <- left_join(dce,apps_ce)
-# 
- dce <- dce %>% 
+ 
+dce <- left_join(dce,apps_ce)
+ 
+dce <- dce %>% 
    mutate(papp = replace(value, is.na(value), 0))
-# 
-# 
+
+ 
 #unindo dataframes
  
 df <- rbind(dma,dce)
@@ -121,12 +89,12 @@ g <-df%>% filter(year>2003&year<=2017)%>%
     panel.grid = element_blank()) +
   scale_x_discrete()+
   annotate(geom="rect",
-            xmin=6, 
+            xmin=5, 
             xmax=9, 
             ymin=0, 
             ymax=0.5,
-            fill="red",
-            alpha=0.05,
+            fill="yellow",
+            alpha=0.2,
             color=NA)
 
 
@@ -137,6 +105,7 @@ desm_points <- g +
   facet_wrap(~biome)+
   #scale_x_discrete(labels=label_x)
   theme(strip.background = element_blank())
+
 
 
 desm_points <- ggpar(desm_points,
@@ -170,12 +139,12 @@ g2 <- df%>% filter(year>2003&year<=2017)%>%
     panel.grid = element_blank())+
   scale_x_discrete()+
   annotate(geom="rect",
-           xmin=6, 
+           xmin=5, 
            xmax=9, 
            ymin=0, 
            ymax=0.5,
-           fill="red",
-           alpha=0.05,
+           fill="yellow",
+           alpha=0.2,
            color=NA)
 
 reg_points <- g2 +
@@ -217,11 +186,11 @@ g3 <- df%>% filter(year>2003&year<=2017)%>%
     panel.grid = element_blank())+
   scale_x_discrete()+
   annotate(geom="rect",
-           xmin=6, 
+           xmin=5, 
            xmax=9, 
            ymin=0, 
            ymax=0.95,
-           fill="red",
+           fill="yellow",
            alpha=0.2,
            color=NA)
 
@@ -266,11 +235,11 @@ g4 <- df%>% filter(year>2003&year<=2017)%>%
     panel.grid = element_blank())+
   scale_x_discrete()+
   annotate(geom="rect",
-           xmin=6, 
+           xmin=5, 
            xmax=9, 
            ymin=0, 
            ymax=0.95,
-           fill="red",
+           fill="yellow",
            alpha=0.2,
            color=NA)
 
