@@ -233,6 +233,9 @@ ma_def_l1 <- ggpar(ma_01_g,
                   font.y=c(7,"bold"),
                   font.tickslab=(5))
 
+
+
+
 #### regeneracao Mata Atlantica ################################################
 
 ml_ma_02 <- att_gt(yname = "reg_rate",
@@ -320,6 +323,19 @@ ma_app_l1 <- ggpar(ma_04_g,
                   font.x=c(7,"bold"),
                   font.y=c(7,"bold"),
                   font.tickslab=(5))
+
+#### tabela do modelo agregado ###############################################
+
+tabela_ma_app_l1 <- as.data.frame(capture.output(summary(ag_ma_04)))
+
+tabela_ma_app_l1_1 <- data.frame(tabela_ma_app_l1[15:34,])
+
+names(tabela_ma_app_l1_1) <- "output"
+
+write.csv(tabela_ma_app_l1_1,"tables/deficit_ma_APP_l1_pd.csv",row.names = F)
+
+
+
 
 #### grafico em painel com 3 plots (menos app) #################################
 
@@ -465,6 +481,17 @@ ma_app_l2 <- ggpar(ma_08_g,
                    font.y=c(7,"bold"),
                    font.tickslab=(5))
 
+#### tabela do modelo agregado ###############################################
+
+tabela_ma_app_l2 <- as.data.frame(capture.output(summary(ag_ma_08)))
+
+tabela_ma_app_l2_1 <- data.frame(tabela_ma_app_l2[15:34,])
+
+names(tabela_ma_app_l2_1) <- "output"
+
+write.csv(tabela_ma_app_l2_1,"tables/deficit_ma_APP_l2_pd.csv",row.names = F)
+
+
 #### grafico em painel com 3 plots (menos app) #################################
 
 anticipation_2 <- ggarrange(ma_def_l2,ma_reg_l2,ma_deficit_l2,ncol=3,labels = "auto")
@@ -608,6 +635,17 @@ ma_app_l3 <- ggpar(ma_12_g,
                    font.x=c(7,"bold"),
                    font.y=c(7,"bold"),
                    font.tickslab=(5))
+
+#### tabela do modelo agregado ###############################################
+
+tabela_ma_app_l3 <- as.data.frame(capture.output(summary(ag_ma_12)))
+
+tabela_ma_app_l3_1 <- data.frame(tabela_ma_app_l3[15:34,])
+
+names(tabela_ma_app_l3_1) <- "output"
+
+write.csv(tabela_ma_app_l3_1,"tables/deficit_ma_APP_l3_pd.csv",row.names = F)
+
 
 ### grafico em painel com 3 plots (menos app) #################################
 
