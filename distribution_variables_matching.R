@@ -229,7 +229,7 @@ slope_density <- ggpar(slope_density,
 
 
 continuas <- ggarrange(veg_density,def_density,reg_density,area_density,slope_density,
-          common.legend = T,ncol = 2,nrow = 3)
+          common.legend = T,ncol = 2,nrow = 3,labels = "auto")
 
 
 

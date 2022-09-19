@@ -53,10 +53,17 @@ dma <- dcert[dcert$biome=="Atlantic Forest",]
 dce <- dcert[dcert$biome=="Cerrado",]
 
 
-# substituir pveg por pdeficit!
+# estatisticas gerais:
 
+dma %>% group_by(treatment)%>%
+  distinct(COD_IMOVEL)%>%
+  #n_distinct()%>% 
+  summarise(n= n())
 
-
+dce %>% group_by(treatment)%>%
+  distinct(COD_IMOVEL)%>%
+  #n_distinct()%>% 
+  summarise(n= n())
 
 
 #---- Desmatamento -------------------------------------------------------------
@@ -96,7 +103,7 @@ write.csv(tabela_ma_desm_1,"tables/desm_ma_pd.csv",row.names = F)
 
 
 ma_def <- ggdid(ag_m1_ma)+
-  geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
+  geom_vline(xintercept=-0.1, linetype="dashed",color = "black", size=1)+
   geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
   theme_classic()#+
   #rotate_x_text(angle = 20)
@@ -144,7 +151,7 @@ write.csv(tabela_ce_desm_1,"tables/desm_ce_pd.csv",row.names = F)
 #### grafico do modelo agregado ###############################################
 
 ce_def <- ggdid(ag_m1_ce)+
-  geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
+  geom_vline(xintercept=-0.1, linetype="dashed",color = "black", size=1)+
   geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
   theme_classic()#+
   #rotate_x_text(angle = 20)
@@ -195,7 +202,7 @@ write.csv(tabela_ma_reg_1,"tables/reg_ma_pd.csv",row.names = F)
 
 
 ma_reg <- ggdid(ag_m3_ma)+
-  geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
+  geom_vline(xintercept=-0.1, linetype="dashed",color = "black", size=1)+
   geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
   theme_classic()#+
   #rotate_x_text(angle = 20)
@@ -240,7 +247,7 @@ write.csv(tabela_ce_reg_1,"tables/reg_ce_pd.csv",row.names = F)
 
 
 ce_reg <- ggdid(ag_m4_ce)+
-  geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
+  geom_vline(xintercept=-0.1, linetype="dashed",color = "black", size=1)+
   geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
   theme_classic()#+
   #rotate_x_text(angle = 20)
@@ -306,7 +313,7 @@ write.csv(tabela_ma_pveg_1,"tables/pveg_ma_pd.csv",row.names = F)
 
 
 ma_pveg <- ggdid(ag_m5_ma)+
-  geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
+  geom_vline(xintercept=-0.1, linetype="dashed",color = "black", size=1)+
   geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
   theme_classic()#+
   #rotate_x_text(angle = 20)
@@ -352,7 +359,7 @@ write.csv(tabela_ce_pveg_1,"tables/pveg_ce_pd.csv",row.names = F)
 
 
 ce_pveg <- ggdid(ag_m6_ce)+
-  geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
+  geom_vline(xintercept=-0.1, linetype="dashed",color = "black", size=1)+
   geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
   theme_classic()#+
   #rotate_x_text(angle = 20)
@@ -395,6 +402,21 @@ dce2_app <- left_join(dce2,apps_ce)
 dce2_app <- dce2_app %>% 
   mutate(papp = replace(value, is.na(value), 0))
 
+
+# estatisticas de n amostral:
+
+
+dma2_app %>% group_by(treatment)%>%
+  distinct(COD_IMOVEL)%>%
+  #n_distinct()%>% 
+  summarise(n= n())
+
+dce2_app %>% group_by(treatment)%>%
+  distinct(COD_IMOVEL)%>%
+  #n_distinct()%>% 
+  summarise(n= n())
+
+
 ################################################################################
 
 # Mata Atlantica
@@ -425,7 +447,7 @@ write.csv(tabela_ma_app_1,"tables/app_ma_pd.csv",row.names = F)
 #### grafico do modelo agregado ###############################################
 
 m9g_ma <- ggdid(ag_m9_ma)+
-  geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
+  geom_vline(xintercept=-0.1, linetype="dashed",color = "black", size=1)+
   geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
   theme_classic()
 
@@ -470,7 +492,7 @@ write.csv(tabela_ce_app_1,"tables/app_ce_pd.csv",row.names = F)
 #### grafico do modelo agregado ###############################################
 
 m9g_ce <- ggdid(ag_m9_ce)+
-  geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
+  geom_vline(xintercept=-0.1, linetype="dashed",color = "black", size=1)+
   geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
   theme_classic()
 
@@ -585,7 +607,7 @@ write.csv(tabela_ma_def_1,"tables/def_ma_pd.csv",row.names = F)
 #### grafico do modelo agregado ###############################################
 
 m14g_ma <- ggdid(ag_m14_ma)+
-  geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
+  geom_vline(xintercept=-0.1, linetype="dashed",color = "black", size=1)+
   geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
   theme_classic()
 
@@ -630,7 +652,7 @@ write.csv(tabela_ce_def_1,"tables/def_ce_pd.csv",row.names = F)
 #### grafico do modelo agregado ###############################################
 
 m14g_ce <- ggdid(ag_m14_ce)+
-  geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
+  geom_vline(xintercept=-0.1, linetype="dashed",color = "black", size=1)+
   geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
   theme_classic()
 
@@ -674,3 +696,19 @@ ggsave(filename = file.path("figures","panel_regression_results_ce_deficit.jpeg"
 
 ggsave(filename = file.path("figures","panel_regression_results_ce_deficit.jpeg"),plot = panel_ce,width = 14,
        height = 12,units = "cm")
+
+# figura unica -----------------------------------------------------------------
+
+
+
+
+panel_ma_Ce <- ggarrange(ma_def,ma_reg,ma_rl_l,ma_app,ce_def,ce_reg,ce_rl_l,
+                         ce_app,labels = "auto",ncol = 2,nrow=4)
+
+
+
+ggsave(filename = file.path("figures","panel_regression_results_ma_ce.jpeg"),plot = panel_ma_Ce,width = 14,
+       height = 18,units = "cm")
+
+
+

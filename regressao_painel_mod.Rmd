@@ -88,19 +88,29 @@ m1cs_ma <- att_gt(yname = "desm_rate_ly",
 
 summary(m1cs_ma)
 
+
+
+
+
 ```
 
 
 ```{r, echo=FALSE}
+
 ag_m1_ma <- aggte(m1cs_ma, type = "dynamic", min_e = -11, max_e = 8)
+
+#ag_m1_ma <- aggte(m1cs_ma, type = "dynamic", min_e = -11, max_e = 8,balance_e = 5)
+
+
+#ag_m1_ma <- aggte(m1cs_ma, type = "calendar")
+
+
 
 m1g_ma <- ggdid(ag_m1_ma)+
   geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
   geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
   theme_classic()
   
-
-
 ```
 
 #### Cerrado
@@ -126,12 +136,12 @@ summary(m2cs_ce)
 ```{r, echo=FALSE}
 
 ag_m2_ce <- aggte(m2cs_ce, type = "dynamic", min_e = -11, max_e = 8)
+
 m2g_ce<- ggdid(ag_m2_ce)+
   geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
   geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
   theme_classic()
   
-
 
 ```
 
@@ -420,4 +430,175 @@ cump_ma_Ce2 <- ggarrange(m7g_ma,m8g_ce,common.legend = T,nrow=2,labels = c("AF",
 
 ```
 
+### Olhando pras APPS
+
+Compensa olhar pra isso. Tenho apenas que entender pq tem uns resultados repetidos
+no caso das APPs e eliminar na hora de calcular a cobertura! E incluir isso
+ nos resultados. Eh um resultado super legal!!
+
+```{r include=FALSE}
+
+apps <- read.csv("app_forest_cover.csv")
+
+# adicionando a planilha de dados so com medias e grandes!
+
+
+apps_ma <- apps %>% 
+  filter(COD_IMOVEL %in% dma2$COD_IMOVEL)
+
+length(unique(apps_ma$COD_IMOVEL))# 161
+
+
+dma2_app <- left_join(dma2,apps_ma)
+
+dma2_app<- dma2_app %>% 
+    mutate(papp = replace(value, is.na(value), 0))
+
+
+
+# cerrado
+
+apps_ce<- apps %>% 
+  filter(COD_IMOVEL %in% dce2$COD_IMOVEL)
+
+dce2_app <- left_join(dce2,apps_ce)
+
+dce2_app <- dce2_app %>% 
+    mutate(papp = replace(value, is.na(value), 0))
+
+
+```
+
+#### Mata Atlantica
+
+
+```{r, echo=FALSE}
+
+m9cs_ma <- att_gt(yname = "papp",
+              gname = "first_year",
+              idname = "id",
+              tname = "year",
+              xformla = ~ 1,
+              panel = TRUE,
+              control_group = "notyettreated",
+              data = dma2_app)
+#(m3_group <- aggte(m3cs, type = "group"))
+
+summary(m9cs_ma)
+
+```
+
+```{r, echo=FALSE}
+ag_m9_ma <- aggte(m9cs_ma, type = "dynamic", min_e = -11, max_e = 8)
+
+m9g_ma <- ggdid(ag_m9_ma)+
+  geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
+  geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
+  theme_classic()
+
+```
+
+
+#### Cerrado
+
+```{r, echo=FALSE}
+
+m9cs_ce <- att_gt(yname = "papp",
+              gname = "first_year",
+              idname = "id",
+              tname = "year",
+              xformla = ~ 1,
+              panel = TRUE,
+              control_group = "notyettreated",
+              data = dce2_app)
+#(m3_group <- aggte(m3cs, type = "group"))
+
+summary(m9cs_ce)
+
+```
+
+```{r, echo=FALSE}
+ag_m9_ce <- aggte(m9cs_ce, type = "dynamic", min_e = -11, max_e = 8)
+
+m9g_ce <- ggdid(ag_m9_ce)+
+  geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
+  geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
+  theme_classic()
+
+```
+
+
+### Olhando pras P_veg descontando APPs vegetadas!
+
+```{r echo=FALSE}
+
+#### Mata Atlantica
+
+
+dma2_app <- dma2_app%>%
+   mutate(areaAPP_m = replace(areaAPP_m, is.na(areaAPP_m), 0))
+
+dma2_app$areaveg_subAPP <- (dma2_app$p_veg*(dma2_app$area_im))-(dma2_app$papp*(dma2_app$areaAPP_m/10^4)) 
+
+summary(dma2_app$areaveg_subAPP)
+
+
+dma2_app <- dma2_app%>%
+   mutate(areaveg_subAPP = replace(areaveg_subAPP, areaveg_subAPP<0, 0))
+
+# tem uns errinhos, alguns valores negativos, com czta imprecisoes nas medidas
+
+
+dma2_app$p_veg_subapp <- dma2_app$areaveg_subAPP/dma2_app$area_im   
+
+
+#### Cerrado
+
+dce2_app <- dce2_app%>%
+   mutate(areaAPP_m = replace(areaAPP_m, is.na(areaAPP_m), 0))
+
+dce2_app$areaveg_subAPP <- (dce2_app$p_veg*(dce2_app$area_im))-(dce2_app$papp*(dce2_app$areaAPP_m/10^4)) 
+
+summary(dce2_app$areaveg_subAPP)
+
+
+dce2_app <- dce2_app%>%
+   mutate(areaveg_subAPP = replace(areaveg_subAPP, areaveg_subAPP<0, 0))
+
+# tem uns errinhos, alguns valores negativos, com czta imprecisoes nas medidas
+
+
+dce2_app$p_veg_subapp <- dce2_app$areaveg_subAPP/dce2_app$area_im   
+
+
+```
+
+#### Mata Atlantica
+
+```{r, echo=FALSE}
+
+m10cs_ce <- att_gt(yname = "p_veg_subapp",
+              gname = "first_year",
+              idname = "id",
+              tname = "year",
+              xformla = ~ 1,
+              panel = TRUE,
+              control_group = "notyettreated",
+              data = dce2_app)
+#(m3_group <- aggte(m3cs, type = "group"))
+
+summary(m10cs_ce)
+
+```
+
+```{r, echo=FALSE}
+
+ag_m10_ce <- aggte(m10cs_ce, type = "dynamic", min_e = -11, max_e = 8)
+
+m10g_ce <- ggdid(ag_m10_ce)+
+  geom_vline(xintercept=-0.5, linetype="dashed",color = "black", size=1)+
+  geom_hline(yintercept=0, linetype="dashed",color = "red", size=1)+
+  theme_classic()
+
+```
 
