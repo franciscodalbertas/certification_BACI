@@ -66,7 +66,10 @@ Distribuicao de propriedades certificadas entre MA e CE:
 
 ```{r echo=FALSE}
 
-df <- read.csv("data_for_matching.csv")
+library(readr)
+
+df <- read_csv("data_for_matching.csv", 
+    locale = locale(encoding = "WINDOWS-1252"))
 names(df)[8] <- "biome"
 summary(as.factor(df$biome[df$treatment=="certified"]))
 
@@ -215,9 +218,16 @@ ggbarplot(rl,fill = "LR bin",y="prop",x = "Var2")+facet_grid("Var3")
 
 ```{r}
 
+# razao 1 pra 5
+
 nn_ma <-matchit(formula6, data=df_ma, method="nearest", ratio=5, caliper = 0.25,replace = T)
  
 summary(nn_ma, standardize = TRUE)
+
+
+# razao 1 pra 1
+
+nn_ma <-matchit(formula6, data=df_ma, method="nearest", ratio=1, caliper = 0.25,replace = T)
 
 ```
 
@@ -226,7 +236,13 @@ summary(nn_ma, standardize = TRUE)
 
 ```{r echo=FALSE}
 
+# razao 1 pra 5
+
 nn_ce <-matchit(formula6, data=df_ce, method="nearest", ratio=5, caliper = 0.25,replace = T)
+
+# razao 1 pra 1
+
+nn_ce <-matchit(formula6, data=df_ce, method="nearest", ratio=1, caliper = 0.25,replace = T)
  
 summary(nn_ce, standardize = TRUE)
 
@@ -277,9 +293,16 @@ control_ce<-match.data(nn_ce, group="control")
 
 treated_ce<-match.data(nn_ce, group="treat")
 
+# razao 1 pra 5
 
 write.csv(control_ce,"control_ce.csv",row.names = F)
 write.csv(treated_ce,"treatment_ce.csv",row.names = F)
+
+# razao 1 pra 1
+
+write.csv(control_ce,"control_ce_ratio1_1.csv",row.names = F)
+write.csv(treated_ce,"treatment_ce_ratio1_1.csv",row.names = F)
+
 
 # mata atlantica
 
@@ -290,6 +313,10 @@ treated_ma<-match.data(nn_ma, group="treat")
 
 write.csv(control_ma,"control_ma.csv",row.names = F)
 write.csv(treated_ma,"treatment_ma.csv",row.names = F)
+
+write.csv(control_ma,"control_ma_ratio1_1.csv",row.names = F)
+write.csv(treated_ma,"treatment_ma_ratio1_1.csv",row.names = F)
+
 
 
 ```
