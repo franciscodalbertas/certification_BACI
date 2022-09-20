@@ -196,6 +196,7 @@ figure_changing_caliper_ma <- ggpar(figure_changing_caliper_ma,
                  main = "",
                  font.x=c(7,"bold"),
                  font.y=c(7,"bold"),
+                 font.legend = c(7),
                  font.tickslab=(5))
 
 
@@ -311,7 +312,11 @@ figure_changing_caliper_ce <- ggpar(figure_changing_caliper_ce,
                                     main = "",
                                     font.x=c(7,"bold"),
                                     font.y=c(7,"bold"),
+                                    font.legend = c(7),
                                     font.tickslab=(5))
 
 
-final_caliper_plot <- ggarrange(figure_changing_caliper_ma,figure_changing_caliper_ce,labels = "auto",common.legend = T)
+final_caliper_plot <- ggarrange(figure_changing_caliper_ma,figure_changing_caliper_ce,labels = "auto",common.legend = T,nrow = 2)
+
+
+ggsave(filename = file.path("figures","changing_caliper.jpeg"),plot = final_caliper_plot,width = 10, height = 19,units = "cm")
